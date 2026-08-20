@@ -3,10 +3,8 @@
   <icon name="eic_infocenter" texture="extensions\enhanced_info_center\assets\fx\gui\textures\map_sidebar_tabs\eic_infocenter.tga" height="128" width="128"></icon>
   <icon name="eic_options" texture="extensions\enhanced_info_center\assets\fx\gui\textures\map_sidebar_tabs\eic_options.tga" height="128" width="128"></icon>
   <icon name="eic_overview" texture="extensions\enhanced_info_center\assets\fx\gui\textures\map_sidebar_tabs\eic_overview.tga" height="128" width="128"></icon>
-  <icon name="eic_condition" texture="extensions\enhanced_info_center\assets\fx\gui\textures\map_sidebar_tabs\eic_condition.tga" height="128" width="128"></icon>
   <icon name="eic_crew" texture="extensions\enhanced_info_center\assets\fx\gui\textures\map_sidebar_tabs\eic_crew.tga" height="128" width="128"></icon>
   <icon name="eic_trade" texture="extensions\enhanced_info_center\assets\fx\gui\textures\map_sidebar_tabs\eic_trade.tga" height="128" width="128"></icon>
-  <icon name="eic_ships" texture="extensions\enhanced_info_center\assets\fx\gui\textures\map_sidebar_tabs\eic_ships.tga" height="128" width="128"></icon>
   <icon name="eic_damaged" texture="extensions\enhanced_info_center\assets\fx\gui\textures\map_sidebar_tabs\eic_damaged.tga" height="128" width="128"></icon>
   <icon name="eic_signal" texture="extensions\enhanced_info_center\assets\fx\gui\textures\map_sidebar_tabs\eic_signal.tga" height="128" width="128"></icon>
   <icon name="eic_failed" texture="extensions\enhanced_info_center\assets\fx\gui\textures\map_sidebar_tabs\eic_failed.tga" height="128" width="128"></icon>
