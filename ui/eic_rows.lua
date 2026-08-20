@@ -662,6 +662,15 @@ function rows.buttonSorter(def)
   eic.menu.refreshInfoFrame()
 end
 
+--- One press flips every node the current scope names, so the list opens or closes as a whole.
+function rows.buttonExpandAll(targets, expanded)
+  for _, target in ipairs(targets) do
+    data.setExpanded(target, not expanded)
+  end
+  eic.Debug("expand all: %d node(s) set to %s", #targets, tostring(not expanded))
+  eic.menu.refreshInfoFrame()
+end
+
 --- The first row a selection can land on; the title and the sorter row above it are fixed.
 function rows.firstDataRow()
   local fixed = 1
@@ -678,12 +687,36 @@ local function createTabTitleRow(ftable, layout)
     Helper.subTabTitleTextProperties or Helper.headerRowCenteredProperties)
 end
 
+--- The whole-list counterpart of a row's own expand button, in the column those sit in.
+--- A view without that column - the flat ship tabs - has nothing to unfold and gets none.
+local function createExpandAllButton(row, layout, instance, sections, buttonHeight)
+  local entry = layout.byId.expand
+  if entry == nil then
+    return
+  end
+
+  local targets = data.expandTargets(instance, sections)
+  if #targets == 0 then
+    return
+  end
+
+  local expanded = data.allExpanded(targets)
+  local cell     = row[entry.first]
+  cell:createButton({
+    scaling = false, height = buttonHeight,
+    mouseOverText = ReadText(eic.PAGE, expanded and 313 or 312),
+  }):setText(expanded and "-" or "+", { halign = "center", scaling = true })
+  cell.handlers.onClick = function() return rows.buttonExpandAll(targets, expanded) end
+end
+
 --- Generated from the same column list the data rows walk, so a header cannot end up over the
 --- wrong column. A column with a sort key becomes a button, one with only a header a label.
-local function createSorterRow(ftable, layout)
+local function createSorterRow(ftable, layout, instance, sections)
   local row          = ftable:addRow(true, { fixed = true, bgColor = Color["frame_background_semitransparent"] })
   local buttonHeight = Helper.scaleY(eic.rowHeight)
   local iconHeight   = buttonHeight * 3 / 4
+
+  createExpandAllButton(row, layout, instance, sections, buttonHeight)
 
   for _, entry in ipairs(layout.entries) do
     local def = entry.def
@@ -739,13 +772,15 @@ function rows.createInfoTable(frame, view, instance, border)
   ftable:setDefaultComplexCellProperties("button", "text", { fontsize = eic.fontSize })
   applyColumnWidths(ftable, layout)
 
+  -- Ahead of the fixed rows: the sorter row's expand button is built from what it collects.
+  local sections = data.collect(instance, view)
+
   -- The table's only fixed rows, and numfixedrows is the index of the last of them.
   createTabTitleRow(ftable, layout)
   if eic.getOption("sorterRow") then
-    createSorterRow(ftable, layout)
+    createSorterRow(ftable, layout, instance, sections)
   end
 
-  local sections = data.collect(instance, view)
   if #sections == 0 then
     local row = ftable:addRow(false, {})
     row[1]:setColSpan(layout.total):createText(ReadText(eic.PAGE, 1000), { halign = "center" })

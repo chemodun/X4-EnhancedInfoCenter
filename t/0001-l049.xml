@@ -29,6 +29,13 @@
             <t id="306">Breite des Panels</t>
             <t id="307">Zeilen ohne Fracht und Handel ausblenden</t>
             <t id="308">Startreiter</t>
+            <t id="309">Umfang des Aufklappens</t>
+            <t id="310">Nur erste Ebene</t>
+            <t id="311">Alle Ebenen</t>
+
+            <!-- sorter row -->
+            <t id="312">Alle aufklappen</t>
+            <t id="313">Alle zuklappen</t>
 
             <!-- status messages -->
             <t id="1000">Nichts anzuzeigen</t>

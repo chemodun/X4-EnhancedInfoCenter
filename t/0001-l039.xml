@@ -29,6 +29,13 @@
             <t id="306">Larghezza del pannello</t>
             <t id="307">Nascondi le righe senza carico né commercio</t>
             <t id="308">Scheda iniziale</t>
+            <t id="309">Ambito dell'espansione</t>
+            <t id="310">Solo il primo livello</t>
+            <t id="311">Tutti i livelli</t>
+
+            <!-- sorter row -->
+            <t id="312">Espandi tutto</t>
+            <t id="313">Comprimi tutto</t>
 
             <!-- status messages -->
             <t id="1000">Nulla da mostrare</t>

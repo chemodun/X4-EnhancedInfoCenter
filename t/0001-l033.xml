@@ -29,6 +29,13 @@
             <t id="306">Largeur du panneau</t>
             <t id="307">Masquer les lignes sans cargaison ni commerce</t>
             <t id="308">Onglet d'ouverture</t>
+            <t id="309">Portée du dépliement</t>
+            <t id="310">Premier niveau uniquement</t>
+            <t id="311">Tous les niveaux</t>
+
+            <!-- sorter row -->
+            <t id="312">Tout déplier</t>
+            <t id="313">Tout replier</t>
 
             <!-- status messages -->
             <t id="1000">Rien à afficher</t>

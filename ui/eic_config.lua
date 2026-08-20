@@ -111,6 +111,7 @@ local OPTION_DEFAULTS = {
   roleRacing     = true,
 
   sorterRow      = true,
+  expandScope    = "first",
   altRowStations = true,
   altRowFleets   = true,
   altRowShips    = true,
@@ -504,6 +505,14 @@ eic.OPTION_SECTIONS = {
   {
     caption = ReadText(eic.PAGE, 303),
     { id = "sorterRow", name = ReadText(eic.PAGE, 304) },
+    {
+      id      = "expandScope",
+      name    = ReadText(eic.PAGE, 309),
+      choices = {
+        { id = "first", text = ReadText(eic.PAGE, 310), icon = "", displayremoveoption = false },
+        { id = "full",  text = ReadText(eic.PAGE, 311), icon = "", displayremoveoption = false },
+      },
+    },
     {
       id    = "widthPercent",
       name  = ReadText(eic.PAGE, 306),

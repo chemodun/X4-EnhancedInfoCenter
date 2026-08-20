@@ -29,6 +29,13 @@
             <t id="306">Panel width</t>
             <t id="307">Hide rows with no cargo or trade</t>
             <t id="308">Opening tab</t>
+            <t id="309">Expand/collapse scope</t>
+            <t id="310">First level only</t>
+            <t id="311">All levels</t>
+
+            <!-- sorter row -->
+            <t id="312">Expand all</t>
+            <t id="313">Collapse all</t>
 
             <!-- status messages -->
             <t id="1000">Nothing to show</t>

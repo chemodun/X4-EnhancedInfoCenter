@@ -29,6 +29,13 @@
             <t id="306">Panel genişliği</t>
             <t id="307">Kargosu ve ticareti olmayan satırları gizle</t>
             <t id="308">Açılış sekmesi</t>
+            <t id="309">Genişletme kapsamı</t>
+            <t id="310">Yalnızca ilk seviye</t>
+            <t id="311">Tüm seviyeler</t>
+
+            <!-- sorter row -->
+            <t id="312">Tümünü genişlet</t>
+            <t id="313">Tümünü daralt</t>
 
             <!-- status messages -->
             <t id="1000">Gösterilecek bir şey yok</t>

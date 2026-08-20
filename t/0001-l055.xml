@@ -29,6 +29,13 @@
             <t id="306">Largura do painel</t>
             <t id="307">Ocultar linhas sem carga nem comércio</t>
             <t id="308">Aba inicial</t>
+            <t id="309">Alcance da expansão</t>
+            <t id="310">Apenas o primeiro nível</t>
+            <t id="311">Todos os níveis</t>
+
+            <!-- sorter row -->
+            <t id="312">Expandir tudo</t>
+            <t id="313">Recolher tudo</t>
 
             <!-- status messages -->
             <t id="1000">Nada a mostrar</t>

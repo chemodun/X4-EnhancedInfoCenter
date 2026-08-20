@@ -1048,4 +1048,116 @@ end
 
 --endregion
 
+--region Expansion
+
+--- The subordinate groups a row draws, in the order createSubordinateSection walks them.
+local function subordinateGroups(instance, key)
+  local groups = {}
+  for _, subordinate in ipairs(eic.menu.infoTableData[instance].subordinates[key] or {}) do
+    if subordinate.component then
+      local group = data.getObjectInfo(instance, subordinate.component).subordinateGroup
+      if group and (group > 0) then
+        groups[group] = groups[group] or {}
+        table.insert(groups[group], subordinate.component)
+      end
+    end
+  end
+  return groups
+end
+
+--- Collected regardless of the current state, so a half-open list still has every node to set.
+--- The row filter is not among the gates repeated here: it passes anything with children.
+local function walkNode(instance, component, deep, out)
+  local key           = tostring(component)
+  local info          = data.getObjectInfo(instance, component)
+  local infoTableData = eic.menu.infoTableData[instance]
+  local subordinates  = infoTableData.subordinates[key] or {}
+  local dockedShips   = infoTableData.dockedships[key] or {}
+
+  if not (data.passesFilter(info) and data.passesSearch(info.id64)) then
+    return
+  end
+  if not (subordinates.hasRendered or (#dockedShips > 0)) then
+    return
+  end
+  out[#out + 1] = { kind = "property", key = key }
+  if not deep then
+    return
+  end
+
+  local groups = subordinateGroups(instance, key)
+  for group = 1, 10 do
+    if groups[group] then
+      out[#out + 1] = { kind = "subordinates", key = key, group = group }
+      for _, member in ipairs(groups[group]) do
+        walkNode(instance, member, deep, out)
+      end
+    end
+  end
+
+  if #dockedShips > 0 then
+    out[#out + 1] = { kind = "dockedships", key = key,
+      isStation = Helper.isComponentClass(info.realClassId, "station") }
+    for _, docked in ipairs(dockedShips) do
+      walkNode(instance, docked.component, deep, out)
+    end
+  end
+end
+
+--- Every node the global expand button acts on: the top-level rows alone, or, under the full
+--- scope, every expandable row, subordinate group and docked block beneath them.
+function data.expandTargets(instance, sections)
+  local deep    = (eic.getOption("expandScope") == "full")
+  local targets = {}
+  for _, section in ipairs(sections) do
+    if section.kind ~= "construction" then
+      for _, component in ipairs(section.items) do
+        walkNode(instance, component, deep, targets)
+      end
+    end
+  end
+  return targets
+end
+
+function data.isExpanded(target)
+  local menu = eic.menu
+  if target.kind == "subordinates" then
+    return menu.isSubordinateExtended(target.key, target.group)
+  elseif target.kind == "dockedships" then
+    return menu.isDockedShipsExtended(target.key, target.isStation)
+  end
+  return menu.isPropertyExtended(target.key)
+end
+
+function data.allExpanded(targets)
+  for _, target in ipairs(targets) do
+    if not data.isExpanded(target) then
+      return false
+    end
+  end
+  return true
+end
+
+--- The three tables read their absent value differently - a group and a docked ship default to
+--- open, a property row and a station's dock to closed - so collapsing is nil in one and false
+--- in the other, and setting the wrong one reads back as still expanded.
+function data.setExpanded(target, expanded)
+  local menu = eic.menu
+  if target.kind == "subordinates" then
+    menu.extendedsubordinates[target.key .. target.group] = expanded or false
+  elseif target.kind == "dockedships" then
+    if expanded then
+      menu.extendeddockedships[target.key] = true
+    elseif target.isStation then
+      menu.extendeddockedships[target.key] = nil
+    else
+      menu.extendeddockedships[target.key] = false
+    end
+  else
+    menu.extendedproperty[target.key] = expanded or nil
+  end
+end
+
+--endregion
+
 Register_Require_Response("extensions.enhanced_info_center.ui.eic_data", data)
