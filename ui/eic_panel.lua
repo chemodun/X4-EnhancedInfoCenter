@@ -228,9 +228,6 @@ function panel.buttonSetView(category)
   -- The icons are the strip's first row now that the title has a table of its own.
   local strip, col = eic.stripPosition(category)
   pending[strip] = { row = 1, col = col }
-  -- The mode stores no row info of its own, so refreshInfoFrame leaves these be.
-  menu.setrow    = rows.firstDataRow()
-  menu.settoprow = menu.setrow
 
   AddUITriggeredEvent(menu.name, eic.MODE .. "_" .. category)
   eic.Debug("view switched to %s", category)
@@ -247,11 +244,121 @@ end
 
 --endregion
 
+--region Cursor
+
+-- Vanilla carries row and scroll only for its own panel modes, so every tab's position is ours
+-- to keep: `views` holds one cursor per category, restored when that tab comes back up.
+local views      = {}
+local builtView  = nil -- the view the data table now on screen was built for
+local builtTable = nil -- that table, so its live cursor can be read back off it
+local selection  = nil -- the map's single selection the list last scrolled to
+
+--- The one component selected on the map, or nil when it holds none or several.
+local function singleSelection()
+  local found
+  for key in pairs(eic.menu.selectedcomponents or {}) do
+    if found then
+      return nil
+    end
+    found = key
+  end
+  return found
+end
+
+--- The outgoing table's live position, kept under the view that built it.
+local function carryViewState()
+  local id = builtTable and builtTable.id
+  if builtView and id and (id == eic.menu.infoTable) then
+    local state = views[builtView] or {}
+    state.row   = Helper.currentTableRow[id] or state.row
+    state.top   = GetTopRow(id) or state.top
+    views[builtView] = state
+  end
+end
+
+--- What one row costs the window, counted the way table:getFullHeight counts it.
+local function rowHeight(ftable, index)
+  local row    = ftable.rows[index]
+  local height = row:getHeight() + row.properties.paddingTop + row.properties.paddingBottom
+  if row.properties.borderBelow and (index < #ftable.rows) then
+    height = height + Helper.borderSize
+  end
+  -- A row group pads above and below it, and that padding lands on the row opening the group.
+  if row.group and ((index == 1) or (ftable.rows[index - 1].group ~= row.group)) then
+    height = height + 2 * Helper.standardContainerOffset
+  end
+  return height
+end
+
+--- The top row that brings `row` into view. It scrolls up to the row and down only as far as
+--- the row needs, so a selection just past the edge does not jump to the top of the window.
+local function visibleTopRow(ftable, top, row)
+  local numRows = #ftable.rows
+  if (row == nil) or (row < 1) or (row > numRows) then
+    return top
+  end
+
+  -- The fixed rows are always drawn, so their height comes off the scrolling window first.
+  local fixed, available = 0, ftable.properties.maxVisibleHeight
+  while (fixed < numRows) and ftable.rows[fixed + 1].properties.fixed do
+    fixed     = fixed + 1
+    available = available - rowHeight(ftable, fixed)
+  end
+  if row <= fixed then
+    return top
+  end
+
+  top = math.max(top or 0, fixed + 1)
+  if row <= top then
+    return row
+  end
+
+  local height = 0
+  for i = row, top, -1 do
+    height = height + rowHeight(ftable, i)
+    if height > available then
+      return math.min(i + 1, row)
+    end
+  end
+  return top
+end
+
+--- Where the rebuilt list comes up. The row builder states a row when the map's own selection
+--- is in the list; a tab click and the panel opening state a new view. Anything else is a plain
+--- refresh, which keeps the outgoing position so a rebuild never fights the wheel.
+local function applyViewState(ftable, reopened)
+  local menu    = eic.menu
+  local state   = views[eic.viewMode] or {}
+  local row     = math.min(menu.sethighlightborderrow or menu.setrow or state.row or rows.firstDataRow(), #ftable.rows)
+  local top     = state.top
+  local current = singleSelection()
+
+  if reopened or (builtView ~= eic.viewMode) or (menu.setrow and (current ~= selection)) then
+    top = visibleTopRow(ftable, top, row)
+  end
+
+  selection  = current
+  builtView  = eic.viewMode
+  builtTable = ftable
+  views[eic.viewMode] = { row = row, top = top }
+
+  ftable:setTopRow(top)
+  ftable:setSelectedRow(row)
+  eic.Trace("cursor on %s: row=%s top=%s", eic.viewMode, tostring(row), tostring(top))
+end
+
+--endregion
+
 function panel.createInfoFrame()
   local menu = eic.menu
   if menu.infoTableMode ~= eic.MODE then
     return
   end
+
+  -- The outgoing table is still up, so its cursor is read back before anything replaces it.
+  -- A table that is not ours means another mode held the frame and the panel is coming back.
+  local reopened = (menu.infoTable == nil) or (builtTable == nil) or (builtTable.id ~= menu.infoTable)
+  carryViewState()
 
   local width  = eic.frameWidth(menu, eic.mapConfig)
   local height = Helper.viewHeight - menu.infoTableOffsetY - menu.borderOffset
@@ -317,14 +424,13 @@ function panel.createInfoFrame()
   ftable.properties.maxVisibleHeight = Helper.viewHeight - ftable.properties.y - menu.infoFrame.properties.y - Helper.frameBorder
   menu.numFixedRows = ftable.numfixedrows
 
-  ftable:setTopRow(menu.settoprow)
   if menu.infoTable then
     local result = GetShiftStartEndRow(menu.infoTable)
     if result then
       ftable:setShiftStartEnd(table.unpack(result))
     end
   end
-  ftable:setSelectedRow(menu.sethighlightborderrow or menu.setrow)
+  applyViewState(ftable, reopened)
 
   menu.setrow = nil
   menu.settoprow = nil
