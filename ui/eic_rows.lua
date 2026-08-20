@@ -850,26 +850,74 @@ local function collectNodes(instance, layout, sections)
   return total
 end
 
---- How many top-level rows the window holds with every one of them collapsed - which is what
---- a page holds, open rows or not. The fixed rows, the section headers and the row-group
---- padding come off the window first; what is left is rows of one line each.
-local function pageCapacity(ftable, sections)
-  local pitch     = Helper.scaleY(eic.rowHeight) + Helper.borderSize
-  local available = ftable.properties.maxVisibleHeight or 0
+--- What one collapsed top-level row, one section header and one row group cost the window.
+--- A header carries vanilla's headerRow1Height, which is taller than a data row of the same scale.
+local function pagePitches()
+  local pitch  = Helper.scaleY(eic.rowHeight) + Helper.borderSize
+  local header = Helper.scaleY(math.max(eic.rowHeight, Helper.headerRow1Height)) + Helper.borderSize
+  local group  = eic.isV9 and (2 * Helper.standardContainerOffset) or 0
+  return pitch, header, group
+end
+
+--- The window left for the sliced rows: the rows already on the table are fixed, and a section
+--- with nothing in it draws its header and its "none" row on every page.
+local function pageBudget(ftable, sections, pitch, header, group)
+  local budget = ftable.properties.maxVisibleHeight or 0
 
   for i = 1, #ftable.rows do
-    available = available - rows.rowFullHeight(ftable, i)
+    budget = budget - rows.rowFullHeight(ftable, i)
   end
   for _, section in ipairs(sections) do
-    if section.name then
-      available = available - pitch
-    end
-    if eic.isV9 then
-      available = available - 2 * Helper.standardContainerOffset
+    if section.nodes and (#section.nodes == 0) then
+      budget = budget - group - pitch - (section.name and header or 0)
     end
   end
 
-  return math.max(1, math.floor(available / pitch))
+  return budget
+end
+
+--- Where each page ends, walked over the whole list: a page takes as many top-level rows as its
+--- window holds, paying only for the headers it really opens. The build queue is not sliced and
+--- costs nothing here - it follows the last page and scrolls with it, as it did before paging.
+local function pageBounds(sections, total, budget, pitch, header, group)
+  local bounds, index = {}, 1
+
+  while index <= total do
+    local first, passed = index, 0
+    ---@type number
+    local used = 0
+
+    for _, section in ipairs(sections) do
+      local count = (section.nodes and #section.nodes) or 0
+      if count > 0 then
+        local last = passed + count
+        if index <= last then
+          local cost = group + (section.name and header or 0)
+          -- A header with no room for a row under it belongs on the next page.
+          if (index > first) and ((used + cost + pitch) > budget) then
+            break
+          end
+          used = used + cost
+          -- The first row of a page goes on it whatever the budget says, or nothing ever fits.
+          while (index <= last) and (((used + pitch) <= budget) or (index == first)) do
+            used  = used + pitch
+            index = index + 1
+          end
+          if index <= last then
+            break
+          end
+        end
+        passed = last
+      end
+    end
+
+    bounds[#bounds + 1] = index - 1
+  end
+
+  if #bounds == 0 then
+    bounds[1] = 0
+  end
+  return bounds
 end
 
 --- The window the current page opens on the whole list, and the page count behind it.
@@ -878,14 +926,15 @@ local function pageWindow(ftable, sections, total)
     return 1, total
   end
 
-  local size  = pageCapacity(ftable, sections)
-  local count = math.max(1, math.ceil(total / size))
-  eic.pageInfo = { size = size, count = count, total = total }
+  local pitch, header, group = pagePitches()
+  local budget = pageBudget(ftable, sections, pitch, header, group)
+  local bounds = pageBounds(sections, total, budget, pitch, header, group)
+
+  eic.pageInfo = { size = bounds[1], count = #bounds, total = total }
 
   local page = eic.currentPage()
   eic.pages[eic.viewMode] = page
-  local first = (page - 1) * size + 1
-  return first, math.min(total, first + size - 1)
+  return ((page > 1) and (bounds[page - 1] + 1) or 1), bounds[page]
 end
 
 --endregion
