@@ -25,6 +25,9 @@ local KNOWN_ITEM_CLASS = {
 
 --region Layout
 
+-- Weights reach the engine as integers; see the note in rows.resolve.
+local WEIGHT_SCALE = 20
+
 local function applies(def, ctx)
   return (def.applies == nil) or def.applies(ctx)
 end
@@ -88,6 +91,12 @@ function rows.resolve(view)
   if (given > 0) and takerIdx then
     local taker = layout.entries[takerIdx]
     taker.weight = taker.weight + given / taker.span
+  end
+
+  -- Vanilla sums the weights as floats and gives the last column the ceil of the residue,
+  -- which rounds a fractional-weight table one pixel over its width. Integers keep it exact.
+  for _, entry in ipairs(layout.entries) do
+    entry.weight = math.floor(entry.weight * WEIGHT_SCALE + 0.5)
   end
 
   layout.total = used
@@ -171,7 +180,7 @@ local function applyColumnWidths(ftable, layout)
       end
     elseif def.minPercent then
       ftable:setColWidthMinPercent(entry.first, def.minPercent, entry.weight)
-    elseif entry.weight ~= 1 then
+    else
       for i = 0, entry.span - 1 do
         ftable:setColWidthMin(entry.first + i, 0, entry.weight, false)
       end
@@ -733,13 +742,18 @@ end
 --- border below the last row: counting that one too leaves a caller short rather than over.
 function rows.rowFullHeight(ftable, index)
   local row    = ftable.rows[index]
-  local height = row:getHeight() + row.properties.paddingTop + row.properties.paddingBottom
+  local height = row:getHeight()
   if row.properties.borderBelow then
     height = height + Helper.borderSize
   end
-  -- A row group pads above and below it, and that padding lands on the row opening the group.
-  if row.group and ((index == 1) or (ftable.rows[index - 1].group ~= row.group)) then
-    height = height + 2 * Helper.standardContainerOffset
+  -- Row padding and row groups are 9.0 only: on 8.0 reading the padding logs a widget error
+  -- and yields nil, and getFullHeight counts neither.
+  if eic.isV9 then
+    height = height + row.properties.paddingTop + row.properties.paddingBottom
+    -- A row group pads above and below it, and that padding lands on the row opening the group.
+    if row.group and ((index == 1) or (ftable.rows[index - 1].group ~= row.group)) then
+      height = height + 2 * Helper.standardContainerOffset
+    end
   end
   return height
 end
