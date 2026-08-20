@@ -763,6 +763,22 @@ function data.passesRowFilter(view, info, hasChildren)
   return filter(info, hasChildren) and true or false
 end
 
+--- Whether an object gets a row at all: the option filters, the tab's own filter and the map
+--- search. Cached for the refresh, since the pager counts the rows the builder then paints.
+function data.isRowVisible(instance, view, component)
+  local info = data.getObjectInfo(instance, component)
+  if info.rowVisible == nil then
+    local infoTableData = eic.menu.infoTableData[instance]
+    local key           = tostring(component)
+    local subordinates  = infoTableData.subordinates[key] or {}
+    local dockedShips   = infoTableData.dockedships[key] or {}
+    local hasChildren   = (subordinates.hasRendered or (#dockedShips > 0)) and true or false
+    info.rowVisible = (data.passesFilter(info) and data.passesRowFilter(view, info, hasChildren)
+      and data.passesSearch(info.id64)) and true or false
+  end
+  return info.rowVisible, info
+end
+
 --endregion
 
 --region Sorting

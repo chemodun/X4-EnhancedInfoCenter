@@ -96,18 +96,30 @@ local tabs    = {}
 local pending = {}
 
 local function carryTabSelection()
-  for strip, tab in pairs(tabs) do
+  for key, tab in pairs(tabs) do
     local id = tab.widget and tab.widget.id
-    tabs[strip] = {
+    tabs[key] = {
       row = (id and Helper.currentTableRow[id]) or tab.row,
       col = (id and Helper.currentTableCol[id]) or tab.col,
     }
   end
 end
 
+--- Where a rebuilt table comes up: a click states the position, a refresh keeps the outgoing one.
+local function applyTabSelection(ftable, key)
+  local carry = tabs[key] or {}
+  local set   = pending[key]
+  pending[key] = nil
+  ftable:setSelectedRow((set and set.row) or carry.row or 0)
+  ftable:setSelectedCol((set and set.col) or carry.col or 0)
+  carry.widget = ftable
+  tabs[key]    = carry
+end
+
 --- Button size shared by every strip, counted in halves: two per tab, one per spacer, one for
---- the leading indent, plus a border between neighbouring columns and tables.
-local function tabButtonWidth(frame)
+--- the leading indent, plus a border between neighbouring columns and tables. `reserved` is
+--- what the pager takes off the end of the same line, so the strips can never grow into it.
+local function tabButtonWidth(frame, reserved)
   local halves  = 1
   local borders = eic.NUMSTRIPS - 1
   for strip = 1, eic.NUMSTRIPS do
@@ -117,7 +129,7 @@ local function tabButtonWidth(frame)
     end
     borders = borders + #entries + eic.stripFirstColumn(strip) - 2
   end
-  local available = frame.properties.width - borders * Helper.borderSize
+  local available = frame.properties.width - reserved - borders * Helper.borderSize
   return math.min(eic.menu.sideBarWidth, math.floor(2 * available / halves))
 end
 
@@ -202,14 +214,7 @@ function panel.createTabBar(frame, border, strip, width, x, y)
     padCell:createText(" ", { minRowHeight = width + 2 * Helper.standardContainerOffset, scaling = false })
   end
 
-  -- A tab click states where the rebuilt strip comes up; a refresh keeps the outgoing cursor.
-  local carry = tabs[strip] or {}
-  local set   = pending[strip]
-  pending[strip] = nil
-  tabTable:setSelectedRow((set and set.row) or carry.row or 0)
-  tabTable:setSelectedCol((set and set.col) or carry.col or 0)
-  carry.widget = tabTable
-  tabs[strip]  = carry
+  applyTabSelection(tabTable, strip)
 
   return tabTable
 end
@@ -252,6 +257,7 @@ local views      = {}
 local builtView  = nil -- the view the data table now on screen was built for
 local builtTable = nil -- that table, so its live cursor can be read back off it
 local selection  = nil -- the map's single selection the list last scrolled to
+local pageTurned = false -- the outgoing cursor belongs to the page left behind
 
 --- The one component selected on the map, or nil when it holds none or several.
 local function singleSelection()
@@ -269,25 +275,15 @@ end
 local function carryViewState()
   local id = builtTable and builtTable.id
   if builtView and id and (id == eic.menu.infoTable) then
+    if pageTurned then
+      views[builtView] = nil
+      return
+    end
     local state = views[builtView] or {}
     state.row   = Helper.currentTableRow[id] or state.row
     state.top   = GetTopRow(id) or state.top
     views[builtView] = state
   end
-end
-
---- What one row costs the window, counted the way table:getFullHeight counts it.
-local function rowHeight(ftable, index)
-  local row    = ftable.rows[index]
-  local height = row:getHeight() + row.properties.paddingTop + row.properties.paddingBottom
-  if row.properties.borderBelow and (index < #ftable.rows) then
-    height = height + Helper.borderSize
-  end
-  -- A row group pads above and below it, and that padding lands on the row opening the group.
-  if row.group and ((index == 1) or (ftable.rows[index - 1].group ~= row.group)) then
-    height = height + 2 * Helper.standardContainerOffset
-  end
-  return height
 end
 
 --- The top row that brings `row` into view. It scrolls up to the row and down only as far as
@@ -302,7 +298,7 @@ local function visibleTopRow(ftable, top, row)
   local fixed, available = 0, ftable.properties.maxVisibleHeight
   while (fixed < numRows) and ftable.rows[fixed + 1].properties.fixed do
     fixed     = fixed + 1
-    available = available - rowHeight(ftable, fixed)
+    available = available - rows.rowFullHeight(ftable, fixed)
   end
   if row <= fixed then
     return top
@@ -315,7 +311,7 @@ local function visibleTopRow(ftable, top, row)
 
   local height = 0
   for i = row, top, -1 do
-    height = height + rowHeight(ftable, i)
+    height = height + rows.rowFullHeight(ftable, i)
     if height > available then
       return math.min(i + 1, row)
     end
@@ -333,9 +329,10 @@ local function applyViewState(ftable, reopened)
   local top     = state.top
   local current = singleSelection()
 
-  if reopened or (builtView ~= eic.viewMode) or (menu.setrow and (current ~= selection)) then
+  if reopened or pageTurned or (builtView ~= eic.viewMode) or (menu.setrow and (current ~= selection)) then
     top = visibleTopRow(ftable, top, row)
   end
+  pageTurned = false
 
   selection  = current
   builtView  = eic.viewMode
@@ -345,6 +342,109 @@ local function applyViewState(ftable, reopened)
   ftable:setTopRow(top)
   ftable:setSelectedRow(row)
   eic.Trace("cursor on %s: row=%s top=%s", eic.viewMode, tostring(row), tostring(top))
+end
+
+--endregion
+
+--region Pager
+
+local pageEditBox = nil
+
+local function pageText()
+  return eic.currentPage() .. " / " .. eic.pageInfo.count
+end
+
+--- A page change lands at the top of the new page, so the outgoing cursor is dropped.
+local function buttonSetPage(page)
+  if not eic.setCurrentPage(page) then
+    return false
+  end
+  pageTurned = true
+  eic.Debug("page %d of %d on %s", eic.currentPage(), eic.pageInfo.count, eic.viewMode)
+  eic.menu.refreshInfoFrame()
+  return true
+end
+
+--- Vanilla's editing behaviour: the plain number while typing, the pair back once it is done.
+local function pageEditActivated(widget)
+  eic.menu.noupdate = true
+  if pageEditBox and (widget == pageEditBox.id) then
+    C.SetEditBoxText(pageEditBox.id, tostring(eic.currentPage()))
+  end
+end
+
+local function pageEditDeactivated(_, text)
+  local page = tonumber(text)
+  eic.menu.noupdate = false
+  if ((page == nil) or (not buttonSetPage(page))) and pageEditBox then
+    C.SetEditBoxText(pageEditBox.id, pageText())
+  end
+end
+
+--- One line, stated up front: the list below starts at a height counted before it is built.
+--- An arrow row is never shorter than the edit box standing in it.
+function panel.pagerHeight()
+  local height = Helper.scaleY(eic.rowHeight)
+  return (height < Helper.editboxMinHeight) and Helper.editboxMinHeight or height
+end
+
+--- The page number's own column, wide enough for the pair at four digits each.
+local function pageColumnWidth()
+  return math.floor(C.GetTextWidth(" 9999 / 9999 ", Helper.standardFont,
+    Helper.scaleFont(Helper.standardFont, eic.fontSize)) + Helper.scaleX(Helper.standardTextOffsetx))
+end
+
+--- Stated before the pager is built, since the tab strips give up this much of their line for it.
+function panel.pagerWidth()
+  return 4 * panel.pagerHeight() + pageColumnWidth() + 4 * Helper.borderSize
+end
+
+--- Vanilla's page control - first, previous, the page, next, last - on a table of its own,
+--- since a fixed row cannot follow the list's scrolling ones and none of its columns is an
+--- arrow's width either. It shares the tab strips' line, flush with the frame's right edge.
+function panel.createPager(frame, border, x, y)
+  local page      = eic.currentPage()
+  local count     = eic.pageInfo.count
+  local height    = panel.pagerHeight()
+  local width     = height
+  local pageWidth = pageColumnWidth()
+
+  local properties = {
+    tabOrder = eic.NUMSTRIPS + 2, reserveScrollBar = false,
+    x = x, y = y, width = panel.pagerWidth(),
+  }
+  if border then
+    properties.frameborder = border.id
+  end
+
+  local pagerTable = frame:addTable(5, properties)
+  for _, col in ipairs({ 1, 2, 4, 5 }) do
+    pagerTable:setColWidth(col, width, false)
+  end
+  pagerTable:setColWidth(3, pageWidth, false)
+
+  local row = pagerTable:addRow(true, { fixed = true, borderBelow = false })
+  local function arrow(col, icon, active, target)
+    row[col]:createButton({
+      scaling = false, width = width, height = height,
+      active = active, cellBGColor = Color["row_background"],
+    }):setIcon(icon)
+    row[col].handlers.onClick = function() return buttonSetPage(target) end
+  end
+
+  arrow(1, "widget_arrow_skip_left_01", page > 1, 1)
+  arrow(2, "widget_arrow_left_01", page > 1, page - 1)
+  pageEditBox = row[3]:createEditBox({
+    description = ReadText(eic.PAGE, 315), scaling = false, height = height,
+  }):setText(pageText(), { halign = "center", fontsize = eic.fontSize })
+  row[3].handlers.onEditBoxActivated   = pageEditActivated
+  row[3].handlers.onEditBoxDeactivated = pageEditDeactivated
+  arrow(4, "widget_arrow_right_01", page < count, page + 1)
+  arrow(5, "widget_arrow_skip_right_01", page < count, count)
+
+  applyTabSelection(pagerTable, "pager")
+
+  return pagerTable
 end
 
 --endregion
@@ -398,8 +498,8 @@ function panel.createInfoFrame()
   end
 
   -- menu.infoTable is bound to the frame's first table, so the data table is created first
-  -- even though the title and the strips sit above it; every y here is explicit.
-  local ftable = rows.createInfoTable(menu.infoFrame, eic.view(), "left", border)
+  -- even though the title, the strips and the pager sit above it; every y here is explicit.
+  local ftable, layout = rows.createInfoTable(menu.infoFrame, eic.view(), border)
   if ftable == nil then
     return
   end
@@ -407,21 +507,46 @@ function panel.createInfoFrame()
   local contentY = panel.createTitleBar(menu.infoFrame, border):getFullHeight()
 
   -- The strips share one line, so the data table clears the height of one rather than the sum.
+  -- The pager shares it too, at the frame's right edge, and the strips are sized around it.
   carryTabSelection()
-  local strips, stripX = {}, 0
-  local buttonWidth = tabButtonWidth(menu.infoFrame)
+  local paging = eic.pagingOn()
+  if not paging then
+    tabs.pager = nil
+  end
+
+  local stripY, stripX = contentY, 0
+  local strips = {}
+  local buttonWidth = tabButtonWidth(menu.infoFrame, paging and (panel.pagerWidth() + Helper.borderSize) or 0)
   for strip = 1, eic.NUMSTRIPS do
-    local tabTable = panel.createTabBar(menu.infoFrame, border, strip, buttonWidth, stripX, contentY)
+    local tabTable = panel.createTabBar(menu.infoFrame, border, strip, buttonWidth, stripX, stripY)
     if tabTable then
       stripX = stripX + tabTable.properties.width + Helper.borderSize
       strips[#strips + 1] = tabTable
     end
   end
-  if #strips > 0 then
-    contentY = contentY + strips[1]:getFullHeight() + Helper.standardContainerOffset
+
+  -- The line is as tall as a strip, or as the pager on it if that is ever the taller of the two.
+  local lineHeight = (#strips > 0) and strips[1]:getFullHeight() or 0
+  if paging and (lineHeight < panel.pagerHeight()) then
+    lineHeight = panel.pagerHeight()
   end
+  if lineHeight > 0 then
+    contentY = contentY + lineHeight + Helper.standardContainerOffset
+  end
+
   ftable.properties.y = contentY
-  ftable.properties.maxVisibleHeight = Helper.viewHeight - ftable.properties.y - menu.infoFrame.properties.y - Helper.frameBorder
+  ftable.properties.maxVisibleHeight = Helper.viewHeight - contentY - menu.infoFrame.properties.y - Helper.frameBorder
+
+  -- Only the filled list knows its page count, so the pager is built last of all.
+  rows.fillInfoTable(ftable, layout, "left")
+
+  local pager
+  if paging then
+    -- Shorter than a tab button, so it centres on the strips' line, and flush with the
+    -- frame's right edge - the strips gave up exactly this much of that line for it.
+    local pagerY = stripY + math.floor((lineHeight - panel.pagerHeight()) / 2)
+    pager = panel.createPager(menu.infoFrame, border, menu.infoFrame.properties.width - panel.pagerWidth(), pagerY)
+  end
   menu.numFixedRows = ftable.numfixedrows
 
   if menu.infoTable then
@@ -441,10 +566,16 @@ function panel.createInfoFrame()
   if menu.playerinfotable then
     menu.playerinfotable:addConnection(1, 2, true)
   end
-  for i, tabTable in ipairs(strips) do
-    tabTable:addConnection(1 + i, 2)
+  local connection = 1
+  for _, tabTable in ipairs(strips) do
+    connection = connection + 1
+    tabTable:addConnection(connection, 2)
   end
-  ftable:addConnection(2 + #strips, 2)
+  if pager then
+    connection = connection + 1
+    pager:addConnection(connection, 2)
+  end
+  ftable:addConnection(connection + 1, 2)
 
   eic.Trace("info frame built: width=%d height=%d view=%s", width, height, eic.viewMode)
 end

@@ -31,10 +31,14 @@
             <t id="309">Alcance del despliegue</t>
             <t id="310">Solo el primer nivel</t>
             <t id="311">Todos los niveles</t>
+            <t id="314">Paginación</t>
 
             <!-- sorter row -->
             <t id="312">Desplegar todo</t>
             <t id="313">Contraer todo</t>
+
+            <!-- page control -->
+            <t id="315">Página</t>
 
             <!-- status messages -->
             <t id="1000">Nada que mostrar</t>

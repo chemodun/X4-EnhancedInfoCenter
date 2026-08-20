@@ -31,10 +31,14 @@
             <t id="309">Zakres rozwijania</t>
             <t id="310">Tylko pierwszy poziom</t>
             <t id="311">Wszystkie poziomy</t>
+            <t id="314">Stronicowanie</t>
 
             <!-- sorter row -->
             <t id="312">Rozwiń wszystko</t>
             <t id="313">Zwiń wszystko</t>
+
+            <!-- page control -->
+            <t id="315">Strona</t>
 
             <!-- status messages -->
             <t id="1000">Nie ma nic do pokazania</t>

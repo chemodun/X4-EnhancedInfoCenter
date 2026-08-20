@@ -31,10 +31,14 @@
             <t id="309">Alcance da expansão</t>
             <t id="310">Apenas o primeiro nível</t>
             <t id="311">Todos os níveis</t>
+            <t id="314">Paginação</t>
 
             <!-- sorter row -->
             <t id="312">Expandir tudo</t>
             <t id="313">Recolher tudo</t>
+
+            <!-- page control -->
+            <t id="315">Página</t>
 
             <!-- status messages -->
             <t id="1000">Nada a mostrar</t>

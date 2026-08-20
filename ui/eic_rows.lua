@@ -308,7 +308,7 @@ end
 
 local createObjectRow
 
-local function createSubordinateSection(ftable, rowGroup, layout, instance, component, iteration, location, numDisplayed)
+local function createSubordinateSection(rowGroup, layout, instance, component, iteration, location)
   local menu         = eic.menu
   local key          = tostring(component)
   local component64  = ConvertIDTo64Bit(component)
@@ -379,17 +379,14 @@ local function createSubordinateSection(ftable, rowGroup, layout, instance, comp
       if extended then
         data.sortEntries(instance, groups[group].subordinates)
         for i, subordinate in ipairs(groups[group].subordinates) do
-          numDisplayed = createObjectRow(ftable, rowGroup, layout, instance, subordinate.component,
-            iteration + 2, location, i, numDisplayed)
+          createObjectRow(rowGroup, layout, instance, subordinate.component, iteration + 2, location, i)
         end
       end
     end
   end
-
-  return numDisplayed
 end
 
-local function createDockedSection(ftable, rowGroup, layout, instance, component, iteration, location, isStation, numDisplayed)
+local function createDockedSection(rowGroup, layout, instance, component, iteration, location, isStation)
   local menu        = eic.menu
   local key         = tostring(component)
   local component64 = ConvertIDTo64Bit(component)
@@ -440,34 +437,22 @@ local function createDockedSection(ftable, rowGroup, layout, instance, component
   if extended then
     data.sortEntries(instance, dockedShips)
     for i, docked in ipairs(dockedShips) do
-      numDisplayed = createObjectRow(ftable, rowGroup, layout, instance, docked.component,
-        iteration + 2, location, i, numDisplayed)
+      createObjectRow(rowGroup, layout, instance, docked.component, iteration + 2, location, i)
     end
   end
-
-  return numDisplayed
 end
 
-createObjectRow = function(ftable, rowGroup, layout, instance, component, iteration, commanderLocation, index, numDisplayed)
-  local menu = eic.menu
-  local info = data.getObjectInfo(instance, component)
-  local key  = tostring(component)
+createObjectRow = function(rowGroup, layout, instance, component, iteration, commanderLocation, index)
+  local menu          = eic.menu
+  local visible, info = data.isRowVisible(instance, layout.view, component)
+  if not visible then
+    return
+  end
 
+  local key          = tostring(component)
   local subordinates = menu.infoTableData[instance].subordinates[key] or {}
   local dockedShips  = menu.infoTableData[instance].dockedships[key] or {}
   local hasChildren  = (subordinates.hasRendered or (#dockedShips > 0)) and true or false
-
-  if not data.passesFilter(info) then
-    return numDisplayed
-  end
-  if not data.passesRowFilter(layout.view, info, hasChildren) then
-    return numDisplayed
-  end
-  if not data.passesSearch(info.id64) then
-    return numDisplayed
-  end
-
-  numDisplayed = numDisplayed + 1
 
   if (not menu.isPropertyExtended(key)) and (menu.isCommander(info.id64, 0) or menu.isDockContext(info.id64)) then
     menu.extendedproperty[key] = true
@@ -525,21 +510,25 @@ createObjectRow = function(ftable, rowGroup, layout, instance, component, iterat
         renderColumns(commanderRow, layout, repeatCtx)
       end
 
-      numDisplayed = createSubordinateSection(ftable, rowGroup, layout, instance, component, iteration, location, numDisplayed)
+      createSubordinateSection(rowGroup, layout, instance, component, iteration, location)
     end
 
     if #dockedShips > 0 then
-      numDisplayed = createDockedSection(ftable, rowGroup, layout, instance, component, iteration, location,
-        ctx.kind == "station", numDisplayed)
+      createDockedSection(rowGroup, layout, instance, component, iteration, location, ctx.kind == "station")
     end
   end
-
-  return numDisplayed
 end
 
-local function createSection(ftable, layout, instance, section, numDisplayed)
-  local menu = eic.menu
+--- One section over the window `first` to `last`, both indices into its own node list.
+local function createSection(ftable, layout, instance, section, first, last)
+  local menu  = eic.menu
+  local nodes = section.nodes
   layout.sectionId = section.id
+
+  -- A section whose rows all sit on other pages stays off this one, header and all.
+  if (#nodes > 0) and (first > last) then
+    return
+  end
 
   -- A flat view is one section under a tab that already names it, so it has none.
   if section.name then
@@ -552,17 +541,14 @@ local function createSection(ftable, layout, instance, section, numDisplayed)
 
   local rowGroup = eic.isV9 and ftable:addRowGroup({}) or ftable
 
-  local before = numDisplayed
-  for i, component in ipairs(section.items) do
-    numDisplayed = createObjectRow(ftable, rowGroup, layout, instance, component, 0, nil, i, numDisplayed)
+  for i = first, last do
+    createObjectRow(rowGroup, layout, instance, nodes[i], 0, nil, i)
   end
 
-  if numDisplayed == before then
+  if #nodes == 0 then
     local row = rowGroup:addRow(section.id, { bgColor = Color["frame_background_semitransparent"] })
     row[1]:setColSpan(layout.total):createText(section.none, { halign = "center" })
   end
-
-  return numDisplayed
 end
 
 --- The header of a name group: the common name where an object row has its name, the sector
@@ -607,35 +593,34 @@ local function createGroupRow(rowGroup, layout, group, index)
 end
 
 --- Deployables listed by what they are: one row per repeated name, its copies under it when open.
-local function createDeployableSection(ftable, layout, instance, section, numDisplayed)
+local function createDeployableSection(ftable, layout, instance, section, first, last)
+  local groups = section.nodes
   layout.sectionId = section.id
 
+  if (#groups > 0) and (first > last) then
+    return
+  end
+
   local rowGroup = eic.isV9 and ftable:addRowGroup({}) or ftable
-  local before   = numDisplayed
   local index    = 0
 
-  for _, group in ipairs(section.groups) do
+  for i = first, last do
+    local group = groups[i]
     index = index + 1
     if #group.items == 1 then
-      numDisplayed = createObjectRow(ftable, rowGroup, layout, instance, group.items[1], 0, nil, index, numDisplayed)
-    else
-      local expanded = createGroupRow(rowGroup, layout, group, index)
-      numDisplayed = numDisplayed + 1
-      if expanded then
-        for _, component in ipairs(group.items) do
-          index = index + 1
-          numDisplayed = createObjectRow(ftable, rowGroup, layout, instance, component, 1, nil, index, numDisplayed)
-        end
+      createObjectRow(rowGroup, layout, instance, group.items[1], 0, nil, index)
+    elseif createGroupRow(rowGroup, layout, group, index) then
+      for _, component in ipairs(group.items) do
+        index = index + 1
+        createObjectRow(rowGroup, layout, instance, component, 1, nil, index)
       end
     end
   end
 
-  if numDisplayed == before then
+  if #groups == 0 then
     local row = rowGroup:addRow(section.id, { bgColor = Color["frame_background_semitransparent"] })
     row[1]:setColSpan(layout.total):createText(section.none, { halign = "center" })
   end
-
-  return numDisplayed
 end
 
 local function createConstructionRow(rowGroup, layout, component, construction, iteration)
@@ -744,6 +729,21 @@ function rows.buttonExpandAll(targets, expanded)
   eic.menu.refreshInfoFrame()
 end
 
+--- What one row costs the window, counted the way table:getFullHeight counts it, bar the
+--- border below the last row: counting that one too leaves a caller short rather than over.
+function rows.rowFullHeight(ftable, index)
+  local row    = ftable.rows[index]
+  local height = row:getHeight() + row.properties.paddingTop + row.properties.paddingBottom
+  if row.properties.borderBelow then
+    height = height + Helper.borderSize
+  end
+  -- A row group pads above and below it, and that padding lands on the row opening the group.
+  if row.group and ((index == 1) or (ftable.rows[index - 1].group ~= row.group)) then
+    height = height + 2 * Helper.standardContainerOffset
+  end
+  return height
+end
+
 --- The first row a selection can land on; the title and the sorter row above it are fixed.
 function rows.firstDataRow()
   local fixed = 1
@@ -825,7 +825,73 @@ end
 
 --endregion
 
-function rows.createInfoTable(frame, view, instance, border)
+--region Paging
+
+--- The top-level nodes each section shows once the filters have had their say, kept on the
+--- section: the list a page slices, and the count that tells an empty section from a paged-out one.
+local function collectNodes(instance, layout, sections)
+  local total = 0
+  for _, section in ipairs(sections) do
+    if section.kind == "construction" then
+      section.nodes = nil
+    elseif section.kind == "deployables" then
+      section.nodes = section.groups
+    else
+      local nodes = {}
+      for _, component in ipairs(section.items) do
+        if data.isRowVisible(instance, layout.view, component) then
+          nodes[#nodes + 1] = component
+        end
+      end
+      section.nodes = nodes
+    end
+    total = total + (section.nodes and #section.nodes or 0)
+  end
+  return total
+end
+
+--- How many top-level rows the window holds with every one of them collapsed - which is what
+--- a page holds, open rows or not. The fixed rows, the section headers and the row-group
+--- padding come off the window first; what is left is rows of one line each.
+local function pageCapacity(ftable, sections)
+  local pitch     = Helper.scaleY(eic.rowHeight) + Helper.borderSize
+  local available = ftable.properties.maxVisibleHeight or 0
+
+  for i = 1, #ftable.rows do
+    available = available - rows.rowFullHeight(ftable, i)
+  end
+  for _, section in ipairs(sections) do
+    if section.name then
+      available = available - pitch
+    end
+    if eic.isV9 then
+      available = available - 2 * Helper.standardContainerOffset
+    end
+  end
+
+  return math.max(1, math.floor(available / pitch))
+end
+
+--- The window the current page opens on the whole list, and the page count behind it.
+local function pageWindow(ftable, sections, total)
+  if not eic.pagingOn() then
+    return 1, total
+  end
+
+  local size  = pageCapacity(ftable, sections)
+  local count = math.max(1, math.ceil(total / size))
+  eic.pageInfo = { size = size, count = count, total = total }
+
+  local page = eic.currentPage()
+  eic.pages[eic.viewMode] = page
+  local first = (page - 1) * size + 1
+  return first, math.min(total, first + size - 1)
+end
+
+--endregion
+
+--- The table alone, so the panel can state its geometry before the rows that have to fit it.
+function rows.createInfoTable(frame, view, border)
   local layout = rows.resolve(view)
   if layout == nil then
     return nil
@@ -845,6 +911,13 @@ function rows.createInfoTable(frame, view, instance, border)
   ftable:setDefaultComplexCellProperties("button", "text", { fontsize = eic.fontSize })
   applyColumnWidths(ftable, layout)
 
+  return ftable, layout
+end
+
+--- The rows, once the table knows how tall its window is: a page is counted against that.
+function rows.fillInfoTable(ftable, layout, instance)
+  local view = layout.view
+
   -- Ahead of the fixed rows: the sorter row's expand button is built from what it collects.
   local sections = data.collect(instance, view)
 
@@ -857,22 +930,29 @@ function rows.createInfoTable(frame, view, instance, border)
   if #sections == 0 then
     local row = ftable:addRow(false, {})
     row[1]:setColSpan(layout.total):createText(ReadText(eic.PAGE, 1000), { halign = "center" })
-    return ftable
+    return
   end
 
-  local numDisplayed = 0
+  local total = collectNodes(instance, layout, sections)
+  local first, last = pageWindow(ftable, sections, total)
+
+  local passed = 0
   for _, section in ipairs(sections) do
     if section.kind == "construction" then
-      createConstructionSection(ftable, layout, section)
-    elseif section.kind == "deployables" then
-      numDisplayed = createDeployableSection(ftable, layout, instance, section, numDisplayed)
+      -- The build queue is the tail of the list, so it comes up under its last page.
+      if last >= total then
+        createConstructionSection(ftable, layout, section)
+      end
     else
-      numDisplayed = createSection(ftable, layout, instance, section, numDisplayed)
+      local builder = (section.kind == "deployables") and createDeployableSection or createSection
+      builder(ftable, layout, instance, section,
+        math.max(first - passed, 1), math.min(last - passed, #section.nodes))
+      passed = passed + #section.nodes
     end
   end
 
-  eic.Trace("view %s: %d row(s) over %d columns", view.category, numDisplayed, layout.total)
-  return ftable
+  eic.Trace("view %s: row(s) %d to %d of %d over %d columns",
+    view.category, first, last, total, layout.total)
 end
 
 Register_Require_Response("extensions.enhanced_info_center.ui.eic_rows", rows)

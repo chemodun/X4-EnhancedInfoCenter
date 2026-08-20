@@ -31,10 +31,14 @@
             <t id="309">Ambito dell'espansione</t>
             <t id="310">Solo il primo livello</t>
             <t id="311">Tutti i livelli</t>
+            <t id="314">Impaginazione</t>
 
             <!-- sorter row -->
             <t id="312">Espandi tutto</t>
             <t id="313">Comprimi tutto</t>
+
+            <!-- page control -->
+            <t id="315">Pagina</t>
 
             <!-- status messages -->
             <t id="1000">Nulla da mostrare</t>

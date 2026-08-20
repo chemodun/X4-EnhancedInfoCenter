@@ -31,10 +31,14 @@
             <t id="309">Genişletme kapsamı</t>
             <t id="310">Yalnızca ilk seviye</t>
             <t id="311">Tüm seviyeler</t>
+            <t id="314">Sayfalama</t>
 
             <!-- sorter row -->
             <t id="312">Tümünü genişlet</t>
             <t id="313">Tümünü daralt</t>
+
+            <!-- page control -->
+            <t id="315">Sayfa</t>
 
             <!-- status messages -->
             <t id="1000">Gösterilecek bir şey yok</t>

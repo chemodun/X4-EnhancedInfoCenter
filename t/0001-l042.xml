@@ -31,10 +31,14 @@
             <t id="309">Rozsah rozbalení</t>
             <t id="310">Pouze první úroveň</t>
             <t id="311">Všechny úrovně</t>
+            <t id="314">Stránkování</t>
 
             <!-- sorter row -->
             <t id="312">Rozbalit vše</t>
             <t id="313">Sbalit vše</t>
+
+            <!-- page control -->
+            <t id="315">Stránka</t>
 
             <!-- status messages -->
             <t id="1000">Není co zobrazit</t>

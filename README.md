@@ -59,6 +59,12 @@ The columns follow the tab: **Overview** shows the current order, the current ac
 - The `+` and `-` button on the left of a row opens and closes a fleet, a subordinate group or a block of docked ships.
 - The same button on the sorter row does it for the whole list at once. It shows `-` only when everything in scope is already open, and the **Expand/collapse scope** option decides whether that scope is the top level rows or every node below them.
 
+### Paging
+
+- `Paging` in the options cuts every tab's list into pages and puts the vanilla page control - first, previous, the page number, next, last - at the right end of the tab strip, on the same line as the tab icons. It is off by default; with it off the list stays one scrolling whole.
+- A page holds as many top level rows as the panel shows with every one of them collapsed, whether they are collapsed or not: rows you open push the rest of the page past the lower edge, where the list scrolls down to them the way it always did.
+- Each tab remembers the page it stands on, and the box between the arrows takes a page number typed straight into it. On the tabs that list the build queue, the queue follows the last page.
+
 ### Selecting on the map
 
 Row interaction is the vanilla one, deliberately: a click makes the row current and selects that object on the map, ctrl click and shift click add to and extend the selection, a double click focuses the map on the object - or, on a subordinate group row, on the whole group - and a right click opens the interact menu for it. While the map is asking you to pick a target - a ship to hire from, a builder, a position - the panel answers with the same picker frame the vanilla list does.
@@ -70,7 +76,7 @@ Pick **Info Center Options** from the map's right sidebar. The options apply imm
 - **Ship Size** - `XL`, `L`, `M`, `S` and `Spacesuit`, filtering every list by hull size.
 - **Ship Roles** - `Fight`, `Trade`, `Mine`, `Build`, `Auxiliary`, `Salvage`, `Dismantling` and `Racing`, filtering by what a ship is fitted out for.
 - **Deployables** - `Laser Towers`, `Mines`, `Navigation Beacons`, `Resource Probes`, `Satellites` and `Lockboxes`, filtering the Deployables tab.
-- **Display** - `Sorter row` switches the header row off, `Expand/collapse scope` sets what the sorter row's expand button acts on, `Panel width` is the share of the screen the panel takes, and `Opening tab` is the tab each new session starts on.
+- **Display** - `Sorter row` switches the header row off, `Paging` cuts every list into pages, `Expand/collapse scope` sets what the sorter row's expand button acts on, `Panel width` is the share of the screen the panel takes, and `Opening tab` is the tab each new session starts on.
 - **Alternating row colour** - one flag each for `Stations`, `Fleets`, `Ships` and `Deployables`, so a long section can be striped while a short one is not.
 - **Trade & Cargo** - `Hide rows with no cargo or trade` drops everything that is neither carrying nor trading from the three trade tabs.
 

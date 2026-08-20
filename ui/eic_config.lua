@@ -48,6 +48,9 @@ local eic = {
   -- Live panel state: session-only, the way vanilla treats menu.propertyMode.
   viewMode   = "overview",
   sorterType = "name",
+  -- The page each tab's list stands on, and what the last build made of the current tab's.
+  pages      = {},
+  pageInfo   = { size = 0, count = 1, total = 0 },
 
   -- Set by eic_panel.Init; the other modules read the map menu from here.
   menu      = nil,
@@ -110,6 +113,7 @@ local OPTION_DEFAULTS = {
   roleRacing     = true,
 
   sorterRow         = true,
+  paging            = false,
   expandScope       = "first",
   altRowStations    = true,
   altRowFleets      = true,
@@ -510,6 +514,7 @@ eic.OPTION_SECTIONS = {
   {
     caption = ReadText(eic.PAGE, 303),
     { id = "sorterRow", name = ReadText(eic.PAGE, 304) },
+    { id = "paging",    name = ReadText(eic.PAGE, 314) },
     {
       id      = "expandScope",
       name    = ReadText(eic.PAGE, 309),
@@ -635,6 +640,26 @@ function eic.nextView(direction)
       return view.category
     end
   end
+end
+
+--- The list cut into windowfuls, off by default: one screenful of top-level rows per page.
+function eic.pagingOn()
+  return eic.getOption("paging") and true or false
+end
+
+--- Clamped on read, so a tab whose list shrank comes up on a page it still has.
+function eic.currentPage()
+  return math.max(1, math.min(eic.pages[eic.viewMode] or 1, eic.pageInfo.count))
+end
+
+--- True when the page actually moved, which is what makes a rebuild worth its while.
+function eic.setCurrentPage(page)
+  page = math.max(1, math.min(math.floor(tonumber(page) or 1), eic.pageInfo.count))
+  if page == eic.currentPage() then
+    return false
+  end
+  eic.pages[eic.viewMode] = page
+  return true
 end
 
 -- InfoCenter_Filters is forleyor's savedvariable and only exists while his mod is

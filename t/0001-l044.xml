@@ -31,10 +31,14 @@
             <t id="309">Expand/collapse scope</t>
             <t id="310">First level only</t>
             <t id="311">All levels</t>
+            <t id="314">Paging</t>
 
             <!-- sorter row -->
             <t id="312">Expand all</t>
             <t id="313">Collapse all</t>
+
+            <!-- page control -->
+            <t id="315">Page</t>
 
             <!-- status messages -->
             <t id="1000">Nothing to show</t>

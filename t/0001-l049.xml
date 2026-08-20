@@ -31,10 +31,14 @@
             <t id="309">Umfang des Aufklappens</t>
             <t id="310">Nur erste Ebene</t>
             <t id="311">Alle Ebenen</t>
+            <t id="314">Seitenweise Anzeige</t>
 
             <!-- sorter row -->
             <t id="312">Alle aufklappen</t>
             <t id="313">Alle zuklappen</t>
+
+            <!-- page control -->
+            <t id="315">Seite</t>
 
             <!-- status messages -->
             <t id="1000">Nichts anzuzeigen</t>
