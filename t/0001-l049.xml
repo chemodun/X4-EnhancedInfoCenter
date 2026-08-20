@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Info Center - German text, page 1972092440 -->
+<diff>
+    <add sel="/language">
+        <page id="1972092440" title="Informationszentrale" descr="" voice="no">
+            <!-- mod identity -->
+            <t id="1">Informationszentrale</t>
+            <t id="2">Fügt der Seitenleiste der Karte ein breites Info-Center-Panel mit Reitern hinzu: deine Stationen, Flotten und Schiffe im Stil der Besitzliste, mit einem Reiter je Spaltenanordnung.</t>
+
+            <!-- sidebar entries -->
+            <t id="100">Informationszentrale</t>
+            <t id="101">Optionen der Informationszentrale</t>
+
+            <!-- tab names the game has no word for -->
+            <t id="200">Zustand</t>
+            <t id="201">Handel und Fracht</t>
+            <t id="203">%s: %s</t>
+
+            <!-- column headers the game has no word for -->
+            <t id="202">Nächster Befehl</t>
+
+            <!-- right-bar options panel -->
+            <t id="300">Schiffsrollen</t>
+            <t id="301">Raumanzug</t>
+            <t id="302">Schatztruhen</t>
+            <t id="303">Anzeige</t>
+            <t id="304">Sortierzeile</t>
+            <t id="305">Abwechselnde Zeilenfarbe</t>
+            <t id="306">Breite des Panels</t>
+            <t id="307">Zeilen ohne Fracht und Handel ausblenden</t>
+            <t id="308">Startreiter</t>
+
+            <!-- status messages -->
+            <t id="1000">Nichts anzuzeigen</t>
+
+            <!-- Section: Debug (90900) -->
+            <t id="90900">Debug</t>
+            <t id="90910">Debug-Stufe</t>
+            <t id="90911">Keine</t>
+            <t id="90912">Debug</t>
+            <t id="90913">Ablaufverfolgung</t>
+        </page>
+    </add>
+</diff>

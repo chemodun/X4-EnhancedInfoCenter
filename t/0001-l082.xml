@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Info Center - Korean text, page 1972092440 -->
+<diff>
+    <add sel="/language">
+        <page id="1972092440" title="정보 센터" descr="" voice="no">
+            <!-- mod identity -->
+            <t id="1">정보 센터</t>
+            <t id="2">지도 사이드바에 탭이 있는 넓은 인포 센터 패널을 추가합니다. 소유 자산 목록과 같은 형식으로 정거장, 함대, 함선을 보여주며 열 구성마다 탭이 하나씩 있습니다.</t>
+
+            <!-- sidebar entries -->
+            <t id="100">정보 센터</t>
+            <t id="101">정보 센터 설정</t>
+
+            <!-- tab names the game has no word for -->
+            <t id="200">상태</t>
+            <t id="201">거래 및 화물</t>
+            <t id="203">%s: %s</t>
+
+            <!-- column headers the game has no word for -->
+            <t id="202">다음 명령</t>
+
+            <!-- right-bar options panel -->
+            <t id="300">함선 역할</t>
+            <t id="301">우주복</t>
+            <t id="302">보관함</t>
+            <t id="303">표시</t>
+            <t id="304">정렬 행</t>
+            <t id="305">행 색상 번갈아 표시</t>
+            <t id="306">패널 너비</t>
+            <t id="307">화물과 거래가 없는 행 숨기기</t>
+            <t id="308">시작 탭</t>
+
+            <!-- status messages -->
+            <t id="1000">표시할 내용이 없습니다</t>
+
+            <!-- Section: Debug (90900) -->
+            <t id="90900">디버그</t>
+            <t id="90910">디버그 수준</t>
+            <t id="90911">없음</t>
+            <t id="90912">디버그</t>
+            <t id="90913">추적</t>
+        </page>
+    </add>
+</diff>

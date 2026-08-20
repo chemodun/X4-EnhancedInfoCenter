@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mdscript name="Enhanced_Info_Center"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../../libraries/md.xsd">
+  <!--
+    Info Center - Extension Options page. The one config key under player.entity.$InfoCenterConfig
+    is $debugLevel ('none' | 'debug' | 'trace'); the panel's own preferences are per-user and live
+    in the EIC_Options savedvariable, set from its right bar.
+  -->
+
+  <cues>
+
+    <cue name="Init" instantiate="false" version="1">
+      <actions>
+        <set_value name="$debugLevelIndexes" exact="['none', 'debug', 'trace']" />
+      </actions>
+      <cues>
+
+        <library name="EIC_Defaults" purpose="include_actions">
+          <actions>
+            <set_value name="$cfg" exact="table[
+              $debugLevel = 'none',
+            ]" />
+          </actions>
+        </library>
+
+        <!-- Sets $debugChance and $traceChance; the caller removes both when done. -->
+        <library name="EIC_ReadDebugChances" purpose="include_actions">
+          <actions>
+            <set_value name="$eicDebugLevel" exact="if @player.entity.$InfoCenterConfig.$debugLevel != null
+              then player.entity.$InfoCenterConfig.$debugLevel else 'none'" />
+            <set_value name="$debugChance" exact="if @$eicDebugLevel == null or @$eicDebugLevel == 'none' then 0 else 100" />
+            <set_value name="$traceChance" exact="if @$eicDebugLevel == 'trace' then 100 else 0" />
+            <remove_value name="$eicDebugLevel" />
+          </actions>
+        </library>
+
+        <library name="EIC_ClearDebugChances" purpose="include_actions">
+          <actions>
+            <remove_value name="$debugChance" />
+            <remove_value name="$traceChance" />
+          </actions>
+        </library>
+
+        <cue name="EIC_Register_Menu" instantiate="true" version="1">
+          <conditions>
+            <event_cue_signalled cue="md.Simple_Menu_API.Reloaded" />
+          </conditions>
+          <actions>
+            <include_actions ref="EIC_Defaults" />
+            <do_if value="@player.entity.$InfoCenterConfig == null">
+              <set_value name="player.entity.$InfoCenterConfig" exact="$cfg" />
+            </do_if>
+            <do_else>
+              <!-- Back-fill any key missing from an older save -->
+              <do_for_each name="$key" in="$cfg">
+                <do_if value="@player.entity.$InfoCenterConfig.{$key} == null">
+                  <set_value name="player.entity.$InfoCenterConfig.{$key}" exact="$cfg.{$key}" />
+                </do_if>
+              </do_for_each>
+            </do_else>
+            <remove_value name="$cfg" />
+
+            <include_actions ref="EIC_ReadDebugChances" />
+            <debug_text text="'InfoCenter: Options: registering menu. Debug level: %s'.[player.entity.$InfoCenterConfig.$debugLevel]"
+              chance="$debugChance" filter="scripts" />
+            <include_actions ref="EIC_ClearDebugChances" />
+
+            <raise_lua_event name="'InfoCenter.SetDebugLevel'" param="player.entity.$InfoCenterConfig.$debugLevel" />
+
+            <signal_cue_instantly cue="md.Simple_Menu_API.Register_Options_Menu"
+              param="table[
+                $id      = 'enhanced_info_center_options_menu',
+                $columns = 12,
+                $title   = {1972092440, 1},
+                $onOpen  = EIC_Options_Menu,
+              ]" />
+          </actions>
+        </cue>
+
+        <cue name="EIC_Options_Menu" instantiate="true" version="1">
+          <conditions>
+            <event_cue_signalled />
+          </conditions>
+          <actions>
+            <do_if value="@player.entity.$InfoCenterConfig != null">
+              <set_value name="$cfg" exact="player.entity.$InfoCenterConfig" />
+
+              <run_actions ref="md.Options_Helper.Add_Title_Row">
+                <param name="title" value="{1972092440, 90900}" />
+              </run_actions>
+
+              <set_value name="$debugLevelOptions" exact="[
+                table[$text = {1972092440, 90911}, $value = 'none'],
+                table[$text = {1972092440, 90912}, $value = 'debug'],
+                table[$text = {1972092440, 90913}, $value = 'trace']
+              ]" />
+              <set_value name="$debugLevelCurrentIndex" exact="$debugLevelIndexes.indexof.{@$cfg.$debugLevel}" />
+              <do_if value="$debugLevelCurrentIndex == 0">
+                <set_value name="$debugLevelCurrentIndex" exact="1" />
+              </do_if>
+
+              <run_actions ref="md.Options_Helper.Add_Dropdown">
+                <param name="id" value="'debugLevel'" />
+                <param name="options" value="$debugLevelOptions" />
+                <param name="currentIndex" value="$debugLevelCurrentIndex" />
+                <param name="col" value="1" />
+                <param name="textColSpan" value="6" />
+                <param name="text" value="{1972092440, 90910}" />
+                <param name="dropdownColSpan" value="6" />
+                <param name="handle" value="EIC_Handle_Dropdown_Changed" />
+              </run_actions>
+              <remove_value name="$debugLevelOptions" />
+              <remove_value name="$debugLevelCurrentIndex" />
+
+              <remove_value name="$cfg" />
+            </do_if>
+          </actions>
+        </cue>
+
+        <cue name="EIC_Handle_Dropdown_Changed" instantiate="true" version="1">
+          <conditions>
+            <event_cue_signalled />
+          </conditions>
+          <actions>
+            <set_value name="$resultTable" exact="player.entity.$InfoCenterConfig" />
+            <include_actions ref="md.Options_Helper.Process_Dropdown_Changed" />
+            <remove_value name="$resultTable" />
+            <do_if value="event.param.$echo.$valueId == '$debugLevel'">
+              <raise_lua_event name="'InfoCenter.SetDebugLevel'" param="player.entity.$InfoCenterConfig.$debugLevel" />
+              <include_actions ref="EIC_ReadDebugChances" />
+              <debug_text text="'InfoCenter: Options: debug level set to %s'.[player.entity.$InfoCenterConfig.$debugLevel]"
+                chance="$debugChance" filter="scripts" />
+              <include_actions ref="EIC_ClearDebugChances" />
+            </do_if>
+          </actions>
+        </cue>
+
+      </cues>
+    </cue>
+
+  </cues>
+</mdscript>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Info Center - English text, page 1972092440 -->
+<diff>
+    <add sel="/language">
+        <page id="1972092440" title="Info Center" descr="" voice="no">
+            <!-- mod identity -->
+            <t id="1">Info Center</t>
+            <t id="2">Adds a wide, tabbed Info Center panel to the map sidebar: your stations, fleets and ships in the vanilla Property Owned style, with one tab per column layout.</t>
+
+            <!-- sidebar entries -->
+            <t id="100">Info Center</t>
+            <t id="101">Info Center Options</t>
+
+            <!-- tab names the game has no word for -->
+            <t id="200">Condition</t>
+            <t id="201">Trade &amp; Cargo</t>
+            <t id="203">%s: %s</t>
+
+            <!-- column headers the game has no word for -->
+            <t id="202">Next Order</t>
+
+            <!-- right-bar options panel -->
+            <t id="300">Ship Roles</t>
+            <t id="301">Spacesuit</t>
+            <t id="302">Lockboxes</t>
+            <t id="303">Display</t>
+            <t id="304">Sorter row</t>
+            <t id="305">Alternating row colour</t>
+            <t id="306">Panel width</t>
+            <t id="307">Hide rows with no cargo or trade</t>
+            <t id="308">Opening tab</t>
+
+            <!-- status messages -->
+            <t id="1000">Nothing to show</t>
+
+            <!-- Section: Debug (90900) -->
+            <t id="90900">Debug</t>
+            <t id="90910">Debug Level</t>
+            <t id="90911">None</t>
+            <t id="90912">Debug</t>
+            <t id="90913">Trace</t>
+        </page>
+    </add>
+</diff>

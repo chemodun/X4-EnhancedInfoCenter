@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Info Center - French text, page 1972092440 -->
+<diff>
+    <add sel="/language">
+        <page id="1972092440" title="Centre d'information" descr="" voice="no">
+            <!-- mod identity -->
+            <t id="1">Centre d'information</t>
+            <t id="2">Ajoute au panneau latéral de la carte un large panneau Info Center à onglets : vos stations, flottes et vaisseaux dans le style Propriétés du jeu, avec un onglet par disposition de colonnes.</t>
+
+            <!-- sidebar entries -->
+            <t id="100">Centre d'information</t>
+            <t id="101">Options du Centre d'information</t>
+
+            <!-- tab names the game has no word for -->
+            <t id="200">État</t>
+            <t id="201">Commerce et cargaison</t>
+            <t id="203">%s : %s</t>
+
+            <!-- column headers the game has no word for -->
+            <t id="202">Ordre suivant</t>
+
+            <!-- right-bar options panel -->
+            <t id="300">Rôles des vaisseaux</t>
+            <t id="301">Combinaison spatiale</t>
+            <t id="302">Coffres</t>
+            <t id="303">Affichage</t>
+            <t id="304">Ligne de tri</t>
+            <t id="305">Couleur alternée des lignes</t>
+            <t id="306">Largeur du panneau</t>
+            <t id="307">Masquer les lignes sans cargaison ni commerce</t>
+            <t id="308">Onglet d'ouverture</t>
+
+            <!-- status messages -->
+            <t id="1000">Rien à afficher</t>
+
+            <!-- Section: Debug (90900) -->
+            <t id="90900">Débogage</t>
+            <t id="90910">Niveau de débogage</t>
+            <t id="90911">Aucun</t>
+            <t id="90912">Débogage</t>
+            <t id="90913">Trace</t>
+        </page>
+    </add>
+</diff>

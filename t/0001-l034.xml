@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Info Center - Spanish text, page 1972092440 -->
+<diff>
+    <add sel="/language">
+        <page id="1972092440" title="Centro de información" descr="" voice="no">
+            <!-- mod identity -->
+            <t id="1">Centro de información</t>
+            <t id="2">Añade a la barra lateral del mapa un amplio panel Info Center con pestañas: tus estaciones, flotas y naves con el estilo de Propiedades del juego, con una pestaña por cada disposición de columnas.</t>
+
+            <!-- sidebar entries -->
+            <t id="100">Centro de información</t>
+            <t id="101">Opciones del Centro de información</t>
+
+            <!-- tab names the game has no word for -->
+            <t id="200">Estado</t>
+            <t id="201">Comercio y carga</t>
+            <t id="203">%s: %s</t>
+
+            <!-- column headers the game has no word for -->
+            <t id="202">Orden siguiente</t>
+
+            <!-- right-bar options panel -->
+            <t id="300">Roles de las naves</t>
+            <t id="301">Traje espacial</t>
+            <t id="302">Cofres</t>
+            <t id="303">Visualización</t>
+            <t id="304">Fila de ordenación</t>
+            <t id="305">Color de fila alterno</t>
+            <t id="306">Anchura del panel</t>
+            <t id="307">Ocultar filas sin carga ni comercio</t>
+            <t id="308">Pestaña inicial</t>
+
+            <!-- status messages -->
+            <t id="1000">Nada que mostrar</t>
+
+            <!-- Section: Debug (90900) -->
+            <t id="90900">Depuración</t>
+            <t id="90910">Nivel de depuración</t>
+            <t id="90911">Ninguno</t>
+            <t id="90912">Depuración</t>
+            <t id="90913">Rastreo</t>
+        </page>
+    </add>
+</diff>

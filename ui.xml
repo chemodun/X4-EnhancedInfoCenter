@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon name="enhanced_info_center" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../core/addon.xsd">
+    <environment type="menus">
+        <dependency name="sn_mod_support_apis" />
+        <dependency name="ego_detailmonitor" />
+        <dependency name="kuertee_ui_extensions" />
+        <file name="ui/eic_config.lua" />
+        <file name="ui/eic_data.lua" />
+        <file name="ui/eic_rows.lua" />
+        <file name="ui/eic_panel.lua" />
+        <savedvariable name="EIC_Options" storage="userdata" />
+    </environment>
+</addon>

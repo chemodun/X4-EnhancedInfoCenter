@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Info Center - Czech text, page 1972092440 -->
+<diff>
+    <add sel="/language">
+        <page id="1972092440" title="Informační centrum" descr="" voice="no">
+            <!-- mod identity -->
+            <t id="1">Informační centrum</t>
+            <t id="2">Přidává do postranního panelu mapy široký panel Info Center s kartami: vaše stanice, flotily a lodě ve stylu herního seznamu majetku, s jednou kartou pro každé rozložení sloupců.</t>
+
+            <!-- sidebar entries -->
+            <t id="100">Informační centrum</t>
+            <t id="101">Nastavení Informačního centra</t>
+
+            <!-- tab names the game has no word for -->
+            <t id="200">Stav</t>
+            <t id="201">Obchod a náklad</t>
+            <t id="203">%s: %s</t>
+
+            <!-- column headers the game has no word for -->
+            <t id="202">Další rozkaz</t>
+
+            <!-- right-bar options panel -->
+            <t id="300">Role lodí</t>
+            <t id="301">Skafandr</t>
+            <t id="302">Truhly</t>
+            <t id="303">Zobrazení</t>
+            <t id="304">Řádek řazení</t>
+            <t id="305">Střídavá barva řádků</t>
+            <t id="306">Šířka panelu</t>
+            <t id="307">Skrýt řádky bez nákladu a obchodu</t>
+            <t id="308">Úvodní karta</t>
+
+            <!-- status messages -->
+            <t id="1000">Není co zobrazit</t>
+
+            <!-- Section: Debug (90900) -->
+            <t id="90900">Ladění</t>
+            <t id="90910">Úroveň ladění</t>
+            <t id="90911">Žádná</t>
+            <t id="90912">Ladění</t>
+            <t id="90913">Trasování</t>
+        </page>
+    </add>
+</diff>

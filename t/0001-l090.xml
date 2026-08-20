@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Info Center - Turkish text, page 1972092440 -->
+<diff>
+    <add sel="/language">
+        <page id="1972092440" title="Bilgi Merkezi" descr="" voice="no">
+            <!-- mod identity -->
+            <t id="1">Bilgi Merkezi</t>
+            <t id="2">Harita kenar çubuğuna sekmeli, geniş bir Info Center paneli ekler: istasyonlarınızı, filolarınızı ve gemilerinizi oyunun mülk listesi görünümünde, her sütun düzeni için bir sekmeyle gösterir.</t>
+
+            <!-- sidebar entries -->
+            <t id="100">Bilgi Merkezi</t>
+            <t id="101">Bilgi Merkezi Seçenekleri</t>
+
+            <!-- tab names the game has no word for -->
+            <t id="200">Durum</t>
+            <t id="201">Ticaret ve Kargo</t>
+            <t id="203">%s: %s</t>
+
+            <!-- column headers the game has no word for -->
+            <t id="202">Sonraki emir</t>
+
+            <!-- right-bar options panel -->
+            <t id="300">Gemi Rolleri</t>
+            <t id="301">Uzay giysisi</t>
+            <t id="302">Kilitli kutular</t>
+            <t id="303">Görünüm</t>
+            <t id="304">Sıralama satırı</t>
+            <t id="305">Değişen satır rengi</t>
+            <t id="306">Panel genişliği</t>
+            <t id="307">Kargosu ve ticareti olmayan satırları gizle</t>
+            <t id="308">Açılış sekmesi</t>
+
+            <!-- status messages -->
+            <t id="1000">Gösterilecek bir şey yok</t>
+
+            <!-- Section: Debug (90900) -->
+            <t id="90900">Hata Ayıklama</t>
+            <t id="90910">Hata Ayıklama Seviyesi</t>
+            <t id="90911">Yok</t>
+            <t id="90912">Hata Ayıklama</t>
+            <t id="90913">İzleme</t>
+        </page>
+    </add>
+</diff>

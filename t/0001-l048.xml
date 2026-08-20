@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Info Center - Polish text, page 1972092440 -->
+<diff>
+    <add sel="/language">
+        <page id="1972092440" title="Centrum informacyjne" descr="" voice="no">
+            <!-- mod identity -->
+            <t id="1">Centrum informacyjne</t>
+            <t id="2">Dodaje do paska bocznego mapy szeroki panel Info Center z zakładkami: twoje stacje, floty i statki w stylu listy własności z gry, z jedną zakładką na każdy układ kolumn.</t>
+
+            <!-- sidebar entries -->
+            <t id="100">Centrum informacyjne</t>
+            <t id="101">Opcje Centrum informacyjnego</t>
+
+            <!-- tab names the game has no word for -->
+            <t id="200">Stan</t>
+            <t id="201">Handel i ładunek</t>
+            <t id="203">%s: %s</t>
+
+            <!-- column headers the game has no word for -->
+            <t id="202">Następny rozkaz</t>
+
+            <!-- right-bar options panel -->
+            <t id="300">Role statków</t>
+            <t id="301">Skafander</t>
+            <t id="302">Skrzynie</t>
+            <t id="303">Wyświetlanie</t>
+            <t id="304">Wiersz sortowania</t>
+            <t id="305">Naprzemienny kolor wierszy</t>
+            <t id="306">Szerokość panelu</t>
+            <t id="307">Ukryj wiersze bez ładunku i handlu</t>
+            <t id="308">Zakładka startowa</t>
+
+            <!-- status messages -->
+            <t id="1000">Nie ma nic do pokazania</t>
+
+            <!-- Section: Debug (90900) -->
+            <t id="90900">Debugowanie</t>
+            <t id="90910">Poziom debugowania</t>
+            <t id="90911">Brak</t>
+            <t id="90912">Debugowanie</t>
+            <t id="90913">Ślad</t>
+        </page>
+    </add>
+</diff>

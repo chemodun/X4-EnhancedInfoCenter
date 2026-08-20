@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Info Center - Chinese Traditional text, page 1972092440 -->
+<diff>
+    <add sel="/language">
+        <page id="1972092440" title="資訊中心" descr="" voice="no">
+            <!-- mod identity -->
+            <t id="1">資訊中心</t>
+            <t id="2">在地圖側邊欄中新增一個帶標籤頁的寬資訊中心面板：以原版資產列表的樣式顯示你的太空站、艦隊和艦船，每種欄位配置對應一個標籤頁。</t>
+
+            <!-- sidebar entries -->
+            <t id="100">資訊中心</t>
+            <t id="101">資訊中心選項</t>
+
+            <!-- tab names the game has no word for -->
+            <t id="200">狀態</t>
+            <t id="201">貿易與貨物</t>
+            <t id="203">%s：%s</t>
+
+            <!-- column headers the game has no word for -->
+            <t id="202">下一個指令</t>
+
+            <!-- right-bar options panel -->
+            <t id="300">艦船職能</t>
+            <t id="301">太空衣</t>
+            <t id="302">保險箱</t>
+            <t id="303">顯示</t>
+            <t id="304">排序列</t>
+            <t id="305">交替列顏色</t>
+            <t id="306">面板寬度</t>
+            <t id="307">隱藏無貨物與交易的列</t>
+            <t id="308">起始標籤頁</t>
+
+            <!-- status messages -->
+            <t id="1000">沒有可顯示的內容</t>
+
+            <!-- Section: Debug (90900) -->
+            <t id="90900">調試</t>
+            <t id="90910">調試級別</t>
+            <t id="90911">無</t>
+            <t id="90912">調試</t>
+            <t id="90913">追蹤</t>
+        </page>
+    </add>
+</diff>

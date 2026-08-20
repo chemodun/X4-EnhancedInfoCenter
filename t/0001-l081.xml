@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Info Center - Japanese text, page 1972092440 -->
+<diff>
+    <add sel="/language">
+        <page id="1972092440" title="インフォメーションセンター" descr="" voice="no">
+            <!-- mod identity -->
+            <t id="1">インフォメーションセンター</t>
+            <t id="2">マップのサイドバーにタブ付きの広いインフォセンターパネルを追加します。所有物リストと同じ見た目でステーション・艦隊・艦船を表示し、列の構成ごとにタブを切り替えられます。</t>
+
+            <!-- sidebar entries -->
+            <t id="100">インフォメーションセンター</t>
+            <t id="101">インフォメーションセンターの設定</t>
+
+            <!-- tab names the game has no word for -->
+            <t id="200">状態</t>
+            <t id="201">取引・貨物</t>
+            <t id="203">%s：%s</t>
+
+            <!-- column headers the game has no word for -->
+            <t id="202">次の命令</t>
+
+            <!-- right-bar options panel -->
+            <t id="300">艦船の役割</t>
+            <t id="301">宇宙服</t>
+            <t id="302">ロックボックス</t>
+            <t id="303">表示</t>
+            <t id="304">ソート行</t>
+            <t id="305">行の色を交互にする</t>
+            <t id="306">パネル幅</t>
+            <t id="307">貨物も取引もない行を隠す</t>
+            <t id="308">起動時のタブ</t>
+
+            <!-- status messages -->
+            <t id="1000">表示するものがありません</t>
+
+            <!-- Section: Debug (90900) -->
+            <t id="90900">デバッグ</t>
+            <t id="90910">デバッグレベル</t>
+            <t id="90911">なし</t>
+            <t id="90912">デバッグ</t>
+            <t id="90913">トレース</t>
+        </page>
+    </add>
+</diff>

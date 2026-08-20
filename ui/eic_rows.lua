@@ -1,0 +1,768 @@
+-- Info Center - the generic row builder.
+-- One walk over the view's column list paints every kind of row: a column that does not
+-- apply leaves its columns empty and a growing neighbour swallows the run.
+
+---@diagnostic disable-next-line: unresolved-require
+local ffi = require("ffi")
+local C   = ffi.C
+
+---@diagnostic disable-next-line: unresolved-require
+local eic  = require("extensions.enhanced_info_center.ui.eic_config")
+---@diagnostic disable-next-line: unresolved-require
+local data = require("extensions.enhanced_info_center.ui.eic_data")
+
+local rows = {}
+
+-- Encyclopedia entries the map records for what it has shown.
+local KNOWN_ITEM_CLASS = {
+  station = "stationtypes",
+  ship_xl = "shiptypes_xl",
+  ship_l  = "shiptypes_l",
+  ship_m  = "shiptypes_m",
+  ship_s  = "shiptypes_s",
+  ship_xs = "shiptypes_xs",
+}
+
+--region Layout
+
+local function applies(def, ctx)
+  return (def.applies == nil) or def.applies(ctx)
+end
+
+--- Resolves a view's column list to physical columns, filling the table exactly.
+function rows.resolve(view)
+  local maxCols = Helper.maxTableCols
+  local layout  = { entries = {}, byId = {}, total = 0 }
+  local next     = 1
+  local growIdx  = nil
+  local slackIdx = nil
+
+  for _, item in ipairs(view.columns) do
+    local id  = eic.columnId(item)
+    local def = eic.COLUMNS[id]
+    if def == nil then
+      eic.Error("view %s names unknown column %s", view.category, id)
+    else
+      local over  = (item ~= id) and item or {}
+      local entry = {
+        def    = def,
+        first  = next,
+        span   = over.span or def.span or 1,
+        weight = over.weight or def.weight or 1.0,
+      }
+      next = next + entry.span
+      layout.entries[#layout.entries + 1] = entry
+      layout.byId[id] = entry
+      if def.grow then
+        growIdx = #layout.entries
+      end
+      if def.slack then
+        slackIdx = slackIdx or #layout.entries
+      end
+    end
+  end
+
+  local used = next - 1
+  if used > maxCols then
+    eic.Error("view %s resolves to %d columns, above the cap of %d", view.category, used, maxCols)
+    return nil
+  end
+
+  -- The surplus goes to the last growing column, rather than leaving a gap at the row end.
+  if (used < maxCols) and growIdx then
+    local surplus = maxCols - used
+    layout.entries[growIdx].span = layout.entries[growIdx].span + surplus
+    for i = growIdx + 1, #layout.entries do
+      layout.entries[i].first = layout.entries[i].first + surplus
+    end
+    used = maxCols
+  end
+
+  -- Columns share the leftover width equally. What the narrow ones give up goes to the slack
+  -- column, leaving the total weight - and so every other column's width - as it was.
+  local given = 0.0
+  for _, entry in ipairs(layout.entries) do
+    given = given + entry.span * (1 - entry.weight)
+  end
+  local takerIdx = slackIdx or growIdx
+  if (given > 0) and takerIdx then
+    local taker = layout.entries[takerIdx]
+    taker.weight = taker.weight + given / taker.span
+  end
+
+  layout.total = used
+  return layout
+end
+
+--- Structural rows split where the object rows start their order column.
+local function splitColumn(layout)
+  local entry = layout.byId.order or layout.byId.action
+  return entry and entry.first or (math.floor(layout.total / 2) + 1)
+end
+
+--- Where a structural row prints fleet data: the order column to the row end.
+--- nil when the view has no fleet column, which keeps the data off the tabs without one.
+local function fleetColumns(layout)
+  if layout.byId.fleet == nil then
+    return nil
+  end
+  return splitColumn(layout), layout.total
+end
+
+--- Where a structural row prints a cargo summary, so a group's total sits under its rows.
+--- nil when the view has no cargo column.
+local function cargoColumns(layout)
+  local entry = layout.byId.cargo
+  if entry == nil then
+    return nil
+  end
+  return entry.first, entry.first + entry.span - 1
+end
+
+local function renderColumns(row, layout, ctx)
+  local entries = layout.entries
+  local i = 1
+  local skipped = nil
+
+  while i <= #entries do
+    local entry = entries[i]
+    local def   = entry.def
+    local step  = i + 1
+
+    if applies(def, ctx) then
+      local first = entry.first
+      local span  = entry.span
+      if def.growBack and skipped then
+        span  = span + (first - skipped)
+        first = skipped
+      end
+      if def.grow then
+        while (step <= #entries) and (not applies(entries[step].def, ctx)) do
+          span = span + entries[step].span
+          step = step + 1
+        end
+      end
+
+      local cell = row[first]
+      if span > 1 then
+        cell:setColSpan(span)
+      end
+      def.render(cell, ctx)
+      skipped = nil
+    else
+      skipped = skipped or entry.first
+    end
+
+    i = step
+  end
+end
+
+local function applyColumnWidths(ftable, layout)
+  local iconWidth = eic.menu.getShipIconWidth()
+  for _, entry in ipairs(layout.entries) do
+    local def = entry.def
+    if def.fixed == "row" then
+      -- 9.x insets the table inside its frame border and widens this column to match.
+      ftable:setColWidth(entry.first,
+        Helper.scaleY(eic.rowHeight) + (eic.isV9 and Helper.standardContainerOffset or 0), false)
+    elseif def.fixed == "icon" then
+      for i = 0, entry.span - 1 do
+        ftable:setColWidth(entry.first + i, iconWidth, false)
+      end
+    elseif def.minPercent then
+      ftable:setColWidthMinPercent(entry.first, def.minPercent, entry.weight)
+    elseif entry.weight ~= 1 then
+      for i = 0, entry.span - 1 do
+        ftable:setColWidthMin(entry.first + i, 0, entry.weight, false)
+      end
+    end
+  end
+
+  -- A leading button column stays outside the row background, as vanilla's does.
+  local first = layout.byId.expand and 2 or 1
+  ftable:setDefaultBackgroundColSpan(first, layout.total - first + 1)
+end
+
+--endregion
+
+--region Row context
+
+--- The upkeep alert marker vanilla shows on its own property rows.
+local function alertMarker(component)
+  local menu = eic.menu
+  if not menu.getFilterOption("layer_other", false) then
+    return "", ""
+  end
+
+  local alertStatus, missionList = menu.getContainerAlertLevel(component)
+  local minAlertLevel = tonumber(menu.getFilterOption("think_alert", false)) or 0
+  if (minAlertLevel == 0) or (alertStatus < minAlertLevel) then
+    return "", ""
+  end
+
+  local color = menu.holomapcolor.highalertcolor
+  if alertStatus == 1 then
+    color = menu.holomapcolor.lowalertcolor
+  elseif alertStatus == 2 then
+    color = menu.holomapcolor.mediumalertcolor
+  end
+  return Helper.convertColorToText(color) .. "\027[workshop_error]\027X",
+      ReadText(1001, 3305) .. ReadText(1001, 120) .. "\n" .. missionList
+end
+
+local function buildContext(instance, layout, component, iteration, index, info)
+  local menu           = eic.menu
+  local view           = layout.view
+  local key            = tostring(component)
+  local component64    = info.id64
+  local subordinates   = menu.infoTableData[instance].subordinates[key] or {}
+  local isStation      = Helper.isComponentClass(info.realClassId, "station")
+  local isWing         = (iteration == 0) and (not isStation) and (#subordinates > 0)
+  local isDoubleRow    = (iteration == 0) and (isStation or (#subordinates > 0))
+  local isConstruction = isStation and IsComponentConstruction(component) and true or false
+
+  local name, color, bgColor, font, mouseOver = menu.getContainerNameAndColors(component, iteration, isDoubleRow, false, true)
+  local alert, alertMouseOver = alertMarker(component)
+  if alertMouseOver ~= "" then
+    mouseOver = (mouseOver ~= "") and (mouseOver .. "\n\n" .. alertMouseOver) or alertMouseOver
+  end
+
+  local sectorId, locationText = GetComponentData(component, "sectorid", "sector")
+
+  local ctx = {
+    view              = view,
+    -- The section the row was emitted under, nested rows included; alternating colour is per section.
+    section           = layout.sectionId,
+    -- The columns reach the engine through here; see the contract in eic_config.
+    data              = data,
+    component         = component,
+    id64              = component64,
+    key               = key,
+    info              = info,
+    instance          = instance,
+    kind              = isStation and "station" or (isWing and "wing" or "ship"),
+    iteration         = iteration,
+    index             = index,
+    isConstruction    = isConstruction,
+    isCommanderRepeat = false,
+    name              = name,
+    color             = color,
+    bgColor           = bgColor,
+    font              = font,
+    mouseOver         = mouseOver,
+    alert             = alert,
+    fleetName         = "",
+    sectorId          = sectorId,
+    locationText      = locationText or "",
+    orderText         = "",
+    actionText        = "",
+    fleetTypes        = {},
+    rowHeight         = eic.rowHeight,
+    fontSize          = eic.fontSize,
+    expand            = nil,
+  }
+
+  if ctx.kind == "ship" then
+    ctx.orderText, ctx.actionText = data.getOrderText(component)
+  elseif not isConstruction then
+    -- No entry cap: the cell spans the order and activity columns, so every type fits.
+    ctx.fleetTypes = menu.getPropertyOwnedFleetData(instance, component, info.macro, nil)
+    if isWing then
+      ctx.fleetName = ffi.string(C.GetFleetName(component64))
+    end
+  end
+
+  return ctx
+end
+
+-- The alternating-colour flag per section; construction rows paint their own background.
+local SECTION_ALT_OPTION = {
+  ownedstations = "altRowStations",
+  ownedfleets   = "altRowFleets",
+  ownedships    = "altRowShips",
+}
+
+local function isDimmedRow(ctx)
+  local option = SECTION_ALT_OPTION[ctx.section]
+  return option and eic.getOption(option) and ((ctx.index % 2) == 1) and true or false
+end
+
+local function rowBackground(ctx)
+  if isDimmedRow(ctx) then
+    return Color["row_background_unselectable"]
+  end
+  return ctx.bgColor
+end
+
+--- A button paints its own background, so the default azure would stand out against the dim.
+local function expandButtonColors(ctx)
+  if isDimmedRow(ctx) then
+    return { bgColor = Color["row_background_unselectable"] }
+  end
+  return {}
+end
+
+--endregion
+
+--region Rows
+
+local createObjectRow
+
+local function createSubordinateSection(ftable, rowGroup, layout, instance, component, iteration, location, numDisplayed)
+  local menu         = eic.menu
+  local key          = tostring(component)
+  local component64  = ConvertIDTo64Bit(component)
+  local subordinates = menu.infoTableData[instance].subordinates[key] or {}
+
+  local groups = {}
+  for _, subordinate in ipairs(subordinates) do
+    if subordinate.component then
+      local group = data.getObjectInfo(instance, subordinate.component).subordinateGroup
+      if group and (group > 0) then
+        if groups[group] then
+          groups[group].subordinates[#groups[group].subordinates + 1] = subordinate
+        else
+          groups[group] = {
+            assignment   = ffi.string(C.GetSubordinateGroupAssignment(component64, group)),
+            subordinates = { subordinate },
+          }
+        end
+      end
+    end
+  end
+
+  for group = 1, 10 do
+    if groups[group] then
+      local groupKey  = key .. group
+      local extended  = menu.isSubordinateExtended(key, group)
+      if (not extended) and menu.isCommander(component64, 0, group) then
+        menu.extendedsubordinates[groupKey] = true
+        extended = true
+      end
+
+      local row = rowGroup:addRow({ "subordinates" .. groupKey, component, group },
+        { bgColor = Color["row_background_blue"] })
+      row[1]:createButton({}):setText(extended and "-" or "+", { halign = "center" })
+      row[1].handlers.onClick = function() return menu.buttonExtendSubordinate(key, group) end
+
+      local text = string.format("%s (%s)",
+        string.rep("    ", iteration + 1) .. string.format(ReadText(1001, 8398), ReadText(20401, group)),
+        data.assignmentName(groups[group].assignment))
+
+      -- The group's make-up in the columns a station or wing row puts its fleet icons in.
+      -- A Trade view has no such column and carries the group's summed holds instead.
+      local first, last = fleetColumns(layout)
+      local summary, properties
+      if first then
+        summary    = data.fleetTypesText(data.getGroupFleetTypes(instance, groups[group].subordinates))
+        properties = { halign = "right" }
+      else
+        first, last = cargoColumns(layout)
+        if first then
+          local mouseOver
+          summary, mouseOver = data.getGroupCargoText(instance, groups[group].subordinates)
+          properties = { halign = "right", mouseOverText = mouseOver }
+        end
+      end
+
+      if first then
+        row[2]:setColSpan(math.max(1, first - 2)):createText(text)
+        row[first]:setColSpan(last - first + 1):createText(summary, properties)
+      else
+        row[2]:setColSpan(layout.total - 1):createText(text)
+      end
+
+      if menu.highlightedborderstationcategory == ("subordinates" .. groupKey) then
+        menu.sethighlightborderrow = row.index
+      end
+
+      if extended then
+        data.sortEntries(instance, groups[group].subordinates)
+        for i, subordinate in ipairs(groups[group].subordinates) do
+          numDisplayed = createObjectRow(ftable, rowGroup, layout, instance, subordinate.component,
+            iteration + 2, location, i, numDisplayed)
+        end
+      end
+    end
+  end
+
+  return numDisplayed
+end
+
+local function createDockedSection(ftable, rowGroup, layout, instance, component, iteration, location, isStation, numDisplayed)
+  local menu        = eic.menu
+  local key         = tostring(component)
+  local component64 = ConvertIDTo64Bit(component)
+  local dockedShips = menu.infoTableData[instance].dockedships[key] or {}
+  local split       = splitColumn(layout)
+
+  if (not menu.isDockedShipsExtended(key)) and menu.isDockContext(component64) then
+    menu.extendeddockedships[key] = true
+  end
+  local extended = menu.isDockedShipsExtended(key, isStation)
+
+  local row = rowGroup:addRow({ "dockedships", component }, { bgColor = Color["row_background_blue"] })
+  row[1]:createButton({}):setText(extended and "-" or "+", { halign = "center" })
+  row[1].handlers.onClick = function() return menu.buttonExtendDockedShips(key, isStation) end
+  row[2]:setColSpan(math.max(1, split - 2)):createText(string.rep("    ", iteration + 1) .. ReadText(1001, 3265))
+
+  local playerShips = {}
+  for _, docked in ipairs(dockedShips) do
+    if data.getObjectInfo(instance, docked.component).isPlayerOwned then
+      playerShips[#playerShips + 1] = docked
+    end
+  end
+  if #playerShips > 0 then
+    -- Colour goes inline, so the fleet icons keep their own.
+    local text = Helper.convertColorToText(menu.holomapcolor.playercolor)
+        .. "\27[order_dockat] " .. #playerShips .. "\27X"
+    if fleetColumns(layout) then
+      local fleetText = data.fleetTypesText(data.getGroupFleetTypes(instance, playerShips))
+      if fleetText ~= "" then
+        text = fleetText .. "  " .. text
+      end
+    end
+    -- On a Trade view the dock count stops short of the cargo column, which takes the summed holds.
+    local cargoFirst, cargoLast = cargoColumns(layout)
+    local countLast = (cargoFirst or (layout.total + 1)) - 1
+    row[split]:setColSpan(countLast - split + 1):createText(text, { halign = "right" })
+    if cargoFirst then
+      local summary, mouseOver = data.getGroupCargoText(instance, playerShips)
+      row[cargoFirst]:setColSpan(cargoLast - cargoFirst + 1):createText(summary,
+        { halign = "right", mouseOverText = mouseOver })
+    end
+  end
+
+  if IsSameComponent(component, menu.highlightedbordercomponent) and (menu.highlightedborderstationcategory == "dockedships") then
+    menu.sethighlightborderrow = row.index
+  end
+
+  if extended then
+    data.sortEntries(instance, dockedShips)
+    for i, docked in ipairs(dockedShips) do
+      numDisplayed = createObjectRow(ftable, rowGroup, layout, instance, docked.component,
+        iteration + 2, location, i, numDisplayed)
+    end
+  end
+
+  return numDisplayed
+end
+
+createObjectRow = function(ftable, rowGroup, layout, instance, component, iteration, commanderLocation, index, numDisplayed)
+  local menu = eic.menu
+  local info = data.getObjectInfo(instance, component)
+  local key  = tostring(component)
+
+  local subordinates = menu.infoTableData[instance].subordinates[key] or {}
+  local dockedShips  = menu.infoTableData[instance].dockedships[key] or {}
+  local hasChildren  = (subordinates.hasRendered or (#dockedShips > 0)) and true or false
+
+  if not data.passesFilter(info) then
+    return numDisplayed
+  end
+  if not data.passesRowFilter(layout.view, info, hasChildren) then
+    return numDisplayed
+  end
+  if not data.passesSearch(info.id64) then
+    return numDisplayed
+  end
+
+  numDisplayed = numDisplayed + 1
+
+  if (not menu.isPropertyExtended(key)) and (menu.isCommander(info.id64, 0) or menu.isDockContext(info.id64)) then
+    menu.extendedproperty[key] = true
+  end
+
+  local ctx      = buildContext(instance, layout, component, iteration, index, info)
+  local extended = menu.isPropertyExtended(key)
+
+  if hasChildren then
+    ctx.expand = {
+      text    = extended and "-" or "+",
+      colors  = expandButtonColors(ctx),
+      onClick = function() return menu.buttonExtendProperty(key) end,
+    }
+  end
+
+  local row = rowGroup:addRow({ "property", component, nil, iteration },
+    { bgColor = rowBackground(ctx), multiSelected = menu.isSelectedComponent(component) })
+  if (menu.getNumSelectedComponents() == 1) and menu.isSelectedComponent(component) then
+    menu.setrow = row.index
+  end
+  if IsSameComponent(component, menu.highlightedbordercomponent) then
+    menu.sethighlightborderrow = row.index
+  end
+
+  renderColumns(row, layout, ctx)
+
+  local nameEntry = layout.byId.name
+  if (row[1].type == "button") and nameEntry then
+    row[1].properties.height = row[nameEntry.first]:getMinTextHeight(false)
+  end
+
+  local knownItemClass = KNOWN_ITEM_CLASS[info.className]
+  if knownItemClass and info.macro then
+    AddKnownItem(knownItemClass, info.macro)
+  end
+
+  if extended then
+    local location = GetComponentData(component, "sectorid") or commanderLocation
+
+    if subordinates.hasRendered then
+      -- The commander repeats itself above its subordinates, marked with a star.
+      if ctx.kind ~= "station" then
+        local repeatCtx = {}
+        for k, v in pairs(ctx) do repeatCtx[k] = v end
+        repeatCtx.kind              = "ship"
+        repeatCtx.isCommanderRepeat = true
+        repeatCtx.expand            = nil
+        if repeatCtx.orderText == "" then
+          repeatCtx.orderText, repeatCtx.actionText = data.getOrderText(component)
+        end
+
+        local commanderRow = rowGroup:addRow({ "property", component, nil, iteration },
+          { bgColor = Color["frame_background_semitransparent"], multiSelected = menu.isSelectedComponent(component) })
+        renderColumns(commanderRow, layout, repeatCtx)
+      end
+
+      numDisplayed = createSubordinateSection(ftable, rowGroup, layout, instance, component, iteration, location, numDisplayed)
+    end
+
+    if #dockedShips > 0 then
+      numDisplayed = createDockedSection(ftable, rowGroup, layout, instance, component, iteration, location,
+        ctx.kind == "station", numDisplayed)
+    end
+  end
+
+  return numDisplayed
+end
+
+local function createSection(ftable, layout, instance, section, numDisplayed)
+  local menu = eic.menu
+  layout.sectionId = section.id
+
+  -- A flat view is one section under a tab that already names it, so it has none.
+  if section.name then
+    local header = ftable:addRow(false, { bgColor = Color["row_title_background"] })
+    header[1]:setColSpan(layout.total):createText(section.name, Helper.headerRowCenteredProperties)
+    if section.id == menu.highlightedbordersection then
+      menu.sethighlightborderrow = header.index + 1
+    end
+  end
+
+  local rowGroup = eic.isV9 and ftable:addRowGroup({}) or ftable
+
+  local before = numDisplayed
+  for i, component in ipairs(section.items) do
+    numDisplayed = createObjectRow(ftable, rowGroup, layout, instance, component, 0, nil, i, numDisplayed)
+  end
+
+  if numDisplayed == before then
+    local row = rowGroup:addRow(section.id, { bgColor = Color["frame_background_semitransparent"] })
+    row[1]:setColSpan(layout.total):createText(section.none, { halign = "center" })
+  end
+
+  return numDisplayed
+end
+
+local function createConstructionRow(rowGroup, layout, component, construction, iteration)
+  local menu  = eic.menu
+  local split = splitColumn(layout)
+
+  local name = ReadText(20109, 5101)
+  if construction.component ~= 0 then
+    name = ffi.string(C.GetComponentName(construction.component))
+  elseif construction.macro ~= "" then
+    name = GetMacroData(construction.macro, "name")
+    if construction.amount then
+      name = construction.amount .. ReadText(1001, 42) .. " " .. name
+    end
+  end
+  name = string.rep("    ", iteration) .. name
+
+  local color = menu.holomapcolor.playercolor
+  local row = rowGroup:addRow({ "construction", component, construction },
+    { bgColor = Color["frame_background_semitransparent"], multiSelected = menu.isSelectedComponent(construction.component) })
+  if menu.highlightedconstruction and (construction.id == menu.highlightedconstruction.id) then
+    menu.sethighlightborderrow = row.index
+  end
+  if (construction.component ~= 0) and IsSameComponent(ConvertStringTo64Bit(tostring(construction.component)), menu.highlightedbordercomponent) then
+    menu.sethighlightborderrow = row.index
+  end
+
+  local missingText = construction.ismissingresources and ReadText(1026, 3223) or ""
+  if construction.inprogress then
+    row[1]:setColSpan(split - 1):createText(function()
+      return menu.getShipBuildProgress(construction.component,
+        name .. " (" .. ffi.string(C.GetObjectIDCode(construction.component)) .. ")")
+    end, { color = color, mouseOverText = missingText })
+    row[split]:setColSpan(layout.total - split + 1):createText(function()
+      return (construction.ismissingresources and "\27Y\27[warning] " or "") ..
+          Helper.formatTimeLeft(C.GetBuildProcessorEstimatedTimeLeft(construction.buildercomponent))
+    end, { halign = "right", color = color, mouseOverText = missingText })
+  else
+    local duration = C.GetBuildTaskDuration(construction.buildingcontainer, construction.id)
+    row[1]:setColSpan(split - 1):createText(name, { color = color })
+    local timeText = construction.amount
+        and string.format(ReadText(1001, 11608), Helper.formatTimeLeft(duration))
+        or ("#" .. construction.queueposition .. " - " .. Helper.formatTimeLeft(duration))
+    row[split]:setColSpan(layout.total - split + 1):createText(timeText, { halign = "right", color = color })
+  end
+end
+
+local function createConstructionSection(ftable, layout, section)
+  if #section.items == 0 then
+    return
+  end
+
+  local menu = eic.menu
+  local header = ftable:addRow(false, { bgColor = Color["row_title_background"] })
+  header[1]:setColSpan(layout.total):createText(section.name, Helper.headerRowCenteredProperties)
+  if section.id == menu.highlightedbordersection then
+    menu.sethighlightborderrow = header.index + 1
+  end
+
+  local rowGroup = eic.isV9 and ftable:addRowGroup({}) or ftable
+  for _, construction in ipairs(section.items) do
+    if construction.empty then
+      rowGroup:addEmptyRow(eic.rowHeight / 2)
+    else
+      createConstructionRow(rowGroup, layout, ConvertStringTo64Bit(tostring(construction.buildingcontainer)), construction, 1)
+    end
+  end
+end
+
+--endregion
+
+--region Sorter row
+
+--- The step a column's button is currently on, nil when the sorter is elsewhere.
+local function activeSortStep(def)
+  local base = eic.sorterBase(eic.sorterType)
+  for i, step in ipairs(eic.sortSteps(def) or {}) do
+    if step.key == base then
+      return step, i
+    end
+  end
+end
+
+--- One press walks the column's steps: each key ascending, then descending, then the next.
+function rows.buttonSorter(def)
+  local steps       = eic.sortSteps(def)
+  local step, index = activeSortStep(def)
+
+  if step == nil then
+    eic.sorterType = steps[1].key
+  elseif eic.sorterType == step.key then
+    eic.sorterType = step.key .. "Inverse"
+  else
+    eic.sorterType = steps[(index % #steps) + 1].key
+  end
+  eic.Debug("sorter set to %s", eic.sorterType)
+  eic.menu.refreshInfoFrame()
+end
+
+--- The first row a selection can land on; the title and the sorter row above it are fixed.
+function rows.firstDataRow()
+  local fixed = 1
+  if eic.getOption("sorterRow") then
+    fixed = fixed + 1
+  end
+  return fixed + 1
+end
+
+--- The view name heads the object list: a strip is narrower than the frame, so it would not centre there.
+local function createTabTitleRow(ftable, layout)
+  local row = ftable:addRow(false, { fixed = true })
+  row[1]:setColSpan(layout.total):createText(layout.view.name,
+    Helper.subTabTitleTextProperties or Helper.headerRowCenteredProperties)
+end
+
+--- Generated from the same column list the data rows walk, so a header cannot end up over the
+--- wrong column. A column with a sort key becomes a button, one with only a header a label.
+local function createSorterRow(ftable, layout)
+  local row          = ftable:addRow(true, { fixed = true, bgColor = Color["frame_background_semitransparent"] })
+  local buttonHeight = Helper.scaleY(eic.rowHeight)
+  local iconHeight   = buttonHeight * 3 / 4
+
+  for _, entry in ipairs(layout.entries) do
+    local def = entry.def
+    if def.header then
+      local cell = row[entry.first]
+      if entry.span > 1 then
+        cell:setColSpan(entry.span)
+      end
+
+      if def.sort then
+        -- The active step names the button, so a multi-step column says which figure it sorts by.
+        local step   = activeSortStep(def)
+        local button = cell:createButton({ scaling = false, height = buttonHeight })
+            :setText((step and step.header) or def.header, { halign = "center", scaling = true })
+        local arrow
+        if step then
+          arrow = (eic.sorterType == step.key) and "table_arrow_inv_down" or "table_arrow_inv_up"
+        end
+        if arrow then
+          button:setIcon(arrow, {
+            width = iconHeight, height = iconHeight,
+            x = button:getColSpanWidth() - iconHeight, y = (buttonHeight - iconHeight) / 2,
+          })
+        end
+        cell.handlers.onClick = function() return rows.buttonSorter(def) end
+      else
+        -- A label can end up over a narrow column, so it carries its own text.
+        cell:createText(def.header, { halign = "center", font = Helper.standardFontBold, mouseOverText = def.header })
+      end
+    end
+  end
+end
+
+--endregion
+
+function rows.createInfoTable(frame, view, instance, border)
+  local layout = rows.resolve(view)
+  if layout == nil then
+    return nil
+  end
+  layout.view = view
+
+  local properties = { tabOrder = 1, multiSelect = true }
+  if border then
+    properties.frameborder = border.id
+    properties.x           = Helper.standardContainerOffset
+    properties.width       = frame.properties.width - 2 * Helper.standardContainerOffset
+  end
+
+  local ftable = frame:addTable(layout.total, properties)
+  ftable:setDefaultCellProperties("text", { minRowHeight = eic.rowHeight, fontsize = eic.fontSize })
+  ftable:setDefaultCellProperties("button", { height = eic.rowHeight })
+  ftable:setDefaultComplexCellProperties("button", "text", { fontsize = eic.fontSize })
+  applyColumnWidths(ftable, layout)
+
+  -- The table's only fixed rows, and numfixedrows is the index of the last of them.
+  createTabTitleRow(ftable, layout)
+  if eic.getOption("sorterRow") then
+    createSorterRow(ftable, layout)
+  end
+
+  local sections = data.collect(instance, view)
+  if #sections == 0 then
+    local row = ftable:addRow(false, {})
+    row[1]:setColSpan(layout.total):createText(ReadText(eic.PAGE, 1000), { halign = "center" })
+    return ftable
+  end
+
+  local numDisplayed = 0
+  for _, section in ipairs(sections) do
+    if section.kind == "construction" then
+      createConstructionSection(ftable, layout, section)
+    else
+      numDisplayed = createSection(ftable, layout, instance, section, numDisplayed)
+    end
+  end
+
+  eic.Trace("view %s: %d row(s) over %d columns", view.category, numDisplayed, layout.total)
+  return ftable
+end
+
+Register_Require_Response("extensions.enhanced_info_center.ui.eic_rows", rows)
