@@ -887,7 +887,9 @@ local function pageBudget(ftable, sections, pitch, header, group)
     end
   end
 
-  return budget
+  -- The page's last row draws no border below it, but pitch charges one; without the pixel back
+  -- the window loses a whole row to it.
+  return budget + Helper.borderSize
 end
 
 --- Where each page ends, walked over the whole list: a page takes as many top-level rows as its
