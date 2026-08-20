@@ -14,7 +14,7 @@ local eic = {
   debugLevel       = "none",
   isV9             = C.GetGameVersion().major >= 9,
 
-  -- Registered in libraries/icons.xml, bar the unassigned tab's, which is vanilla's own.
+  -- Registered in libraries/icons.xml, bar the two tabs carrying vanilla's own mark.
   icons = {
     sideBar     = "eic_infocenter",
     options     = "eic_options",
@@ -33,6 +33,7 @@ local eic = {
     shTrade     = "eic_sh_trade",
     ships       = "eic_ships",
     unassigned  = "mapst_ol_unassigned",
+    deployables = "mapst_ol_deployables",
     damaged     = "eic_damaged",
     signal      = "eic_signal",
     failed      = "eic_failed",
@@ -83,7 +84,7 @@ local LEGACY_OPTIONS = {
 
   infocenter_sorterrow      = "sorterRow",
   -- One legacy flag, three flags here: the value seeds all of them.
-  infocenter_altrowcolor    = { "altRowStations", "altRowFleets", "altRowShips" },
+  infocenter_altrowcolor    = { "altRowStations", "altRowFleets", "altRowShips", "altRowDeployables" },
 }
 
 -- EIC_Options holds only what the player changed; everything else answers from here.
@@ -110,11 +111,12 @@ local OPTION_DEFAULTS = {
   roleRecycling  = true,
   roleRacing     = true,
 
-  sorterRow      = true,
-  expandScope    = "first",
-  altRowStations = true,
-  altRowFleets   = true,
-  altRowShips    = true,
+  sorterRow         = true,
+  expandScope       = "first",
+  altRowStations    = true,
+  altRowFleets      = true,
+  altRowShips       = true,
+  altRowDeployables = true,
 
   hideEmptyTradeRows = false,
 
@@ -416,6 +418,9 @@ local SHIP_CREW_COLUMNS  = { "name", "sector", "order", "action", "skill", "crew
 local SHIP_TRADE_COLUMNS = { "name", "sector", "order", { "action", span = 3, weight = 0.8 }, "cargo", TRADE_WIDE_WARE }
 local SIGNAL_COLUMNS     = { "name", "sector", "order", "nextOrder", "hullBar" }
 local FAILED_COLUMNS     = { "name", "sector", "order", "failedOrder", "failureMessage" }
+-- A deployable has no orders, no crew and no hold, so the tab states only what it has and
+-- lets name and sector take the room the other tabs spend on activity.
+local DEPLOYABLE_COLUMNS = { "expand", { "name", span = 4 }, { "sector", span = 4 }, "hullBar" }
 
 -- Tab names shared by the scoped groups, each behind its own prefix.
 local NAME_OVERVIEW = ReadText(1001, 8045)
@@ -431,26 +436,28 @@ end
 -- scope narrows data.collect to one section, filter names a predicate in eic_data.ROW_FILTERS,
 -- strip picks which of the two tab tables draws the cell.
 eic.VIEWS = {
-  { strip = 1, category = "overview",   name = NAME_OVERVIEW,                                   icon = eic.icons.overview,   source = "property", columns = PROPERTY_COLUMNS },
-  { strip = 1, category = "crew",       name = NAME_CREW,                                       icon = eic.icons.crew,       source = "property", columns = CREW_COLUMNS },
-  { strip = 1, category = "trade",      name = NAME_TRADE,                                      icon = eic.icons.trade,      source = "property", columns = TRADE_COLUMNS,      filter = "tradeCargo" },
+  { strip = 1, category = "overview",    name = NAME_OVERVIEW,                                   icon = eic.icons.overview,    source = "property", columns = PROPERTY_COLUMNS },
+  { strip = 1, category = "crew",        name = NAME_CREW,                                       icon = eic.icons.crew,        source = "property", columns = CREW_COLUMNS },
+  { strip = 1, category = "trade",       name = NAME_TRADE,                                      icon = eic.icons.trade,       source = "property", columns = TRADE_COLUMNS,       filter = "tradeCargo" },
   { strip = 1, spacer = true },
-  { strip = 1, category = "stOverview", name = scopedName(ReadText(1001, 4), NAME_OVERVIEW),    icon = eic.icons.stOverview, source = "property", columns = PROPERTY_COLUMNS,   scope = "stations" },
-  { strip = 1, category = "stCrew",     name = scopedName(ReadText(1001, 4), NAME_CREW),        icon = eic.icons.stCrew,     source = "property", columns = CREW_COLUMNS,       scope = "stations" },
-  { strip = 1, category = "stTrade",    name = scopedName(ReadText(1001, 4), NAME_TRADE),       icon = eic.icons.stTrade,    source = "property", columns = TRADE_COLUMNS,      scope = "stations", filter = "tradeCargo" },
+  { strip = 1, category = "stOverview",  name = scopedName(ReadText(1001, 4), NAME_OVERVIEW),    icon = eic.icons.stOverview,  source = "property", columns = PROPERTY_COLUMNS,    scope = "stations" },
+  { strip = 1, category = "stCrew",      name = scopedName(ReadText(1001, 4), NAME_CREW),        icon = eic.icons.stCrew,      source = "property", columns = CREW_COLUMNS,        scope = "stations" },
+  { strip = 1, category = "stTrade",     name = scopedName(ReadText(1001, 4), NAME_TRADE),       icon = eic.icons.stTrade,     source = "property", columns = TRADE_COLUMNS,       scope = "stations", filter = "tradeCargo" },
   { strip = 1, spacer = true },
-  { strip = 2, category = "flOverview", name = scopedName(ReadText(1001, 8326), NAME_OVERVIEW), icon = eic.icons.flOverview, source = "property", columns = PROPERTY_COLUMNS,   scope = "fleets" },
-  { strip = 2, category = "flCrew",     name = scopedName(ReadText(1001, 8326), NAME_CREW),     icon = eic.icons.flCrew,     source = "property", columns = CREW_COLUMNS,       scope = "fleets" },
-  { strip = 2, category = "flTrade",    name = scopedName(ReadText(1001, 8326), NAME_TRADE),    icon = eic.icons.flTrade,    source = "property", columns = FLEET_TRADE_COLUMNS, scope = "fleets",  filter = "tradeCargo" },
+  { strip = 1, category = "flOverview",  name = scopedName(ReadText(1001, 8326), NAME_OVERVIEW), icon = eic.icons.flOverview,  source = "property", columns = PROPERTY_COLUMNS,    scope = "fleets" },
+  { strip = 1, category = "flCrew",      name = scopedName(ReadText(1001, 8326), NAME_CREW),     icon = eic.icons.flCrew,      source = "property", columns = CREW_COLUMNS,        scope = "fleets" },
+  { strip = 1, category = "flTrade",     name = scopedName(ReadText(1001, 8326), NAME_TRADE),    icon = eic.icons.flTrade,     source = "property", columns = FLEET_TRADE_COLUMNS, scope = "fleets",   filter = "tradeCargo" },
+  { strip = 1, spacer = true },
+  { strip = 2, category = "unassigned",  name = ReadText(1001, 8327),                            icon = eic.icons.unassigned,  source = "property", columns = PROPERTY_COLUMNS,    scope = "unassigned" },
   { strip = 2, spacer = true },
-  { strip = 2, category = "unassigned", name = ReadText(1001, 8327),                            icon = eic.icons.unassigned, source = "property", columns = PROPERTY_COLUMNS,   scope = "unassigned" },
+  { strip = 2, category = "shOverview",  name = scopedName(ReadText(1001, 6), NAME_OVERVIEW),    icon = eic.icons.shOverview,  source = "ships",    columns = SHIP_COLUMNS },
+  { strip = 2, category = "shCrew",      name = scopedName(ReadText(1001, 6), NAME_CREW),        icon = eic.icons.shCrew,      source = "ships",    columns = SHIP_CREW_COLUMNS },
+  { strip = 2, category = "shTrade",     name = scopedName(ReadText(1001, 6), NAME_TRADE),       icon = eic.icons.shTrade,     source = "ships",    columns = SHIP_TRADE_COLUMNS,  filter = "tradeCargo" },
+  { strip = 2, category = "damaged",     name = ReadText(1001, 1501),                            icon = eic.icons.damaged,     source = "ships",    columns = SHIP_COLUMNS,        filter = "damaged" },
+  { strip = 2, category = "signal",      name = ReadText(1041, 111),                             icon = eic.icons.signal,      source = "ships",    columns = SIGNAL_COLUMNS,      filter = "signal" },
+  { strip = 2, category = "failed",      name = ReadText(1001, 11621),                           icon = eic.icons.failed,      source = "ships",    columns = FAILED_COLUMNS,      filter = "failed" },
   { strip = 2, spacer = true },
-  { strip = 2, category = "shOverview", name = scopedName(ReadText(1001, 6), NAME_OVERVIEW),    icon = eic.icons.shOverview, source = "ships",    columns = SHIP_COLUMNS },
-  { strip = 2, category = "shCrew",     name = scopedName(ReadText(1001, 6), NAME_CREW),        icon = eic.icons.shCrew,     source = "ships",    columns = SHIP_CREW_COLUMNS },
-  { strip = 2, category = "shTrade",    name = scopedName(ReadText(1001, 6), NAME_TRADE),       icon = eic.icons.shTrade,    source = "ships",    columns = SHIP_TRADE_COLUMNS, filter = "tradeCargo" },
-  { strip = 2, category = "damaged",    name = ReadText(1001, 1501),                            icon = eic.icons.damaged,    source = "ships",    columns = SHIP_COLUMNS,       filter = "damaged" },
-  { strip = 2, category = "signal",     name = ReadText(1041, 111),                             icon = eic.icons.signal,     source = "ships",    columns = SIGNAL_COLUMNS,     filter = "signal" },
-  { strip = 2, category = "failed",     name = ReadText(1001, 11621),                           icon = eic.icons.failed,     source = "ships",    columns = FAILED_COLUMNS,     filter = "failed" },
+  { strip = 2, category = "deployables", name = ReadText(1001, 1332),                            icon = eic.icons.deployables, source = "property", columns = DEPLOYABLE_COLUMNS,  scope = "deployables" },
 }
 
 --- The tab strip as a dropdown list. A dropdown option's icon field draws nothing, so the
@@ -527,9 +534,10 @@ eic.OPTION_SECTIONS = {
   -- Named by section, and a scoped tab is the same section, so one flag covers both.
   {
     caption = ReadText(eic.PAGE, 305),
-    { id = "altRowStations", name = ReadText(1001, 4) },
-    { id = "altRowFleets",   name = ReadText(1001, 8326) },
-    { id = "altRowShips",    name = ReadText(1001, 6) },
+    { id = "altRowStations",    name = ReadText(1001, 4) },
+    { id = "altRowFleets",      name = ReadText(1001, 8326) },
+    { id = "altRowShips",       name = ReadText(1001, 6) },
+    { id = "altRowDeployables", name = ReadText(1001, 1332) },
   },
   {
     caption = NAME_TRADE,

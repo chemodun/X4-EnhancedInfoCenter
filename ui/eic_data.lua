@@ -109,8 +109,11 @@ ffi.cdef [[
 ]]
 
 local data = {
-  orderInfo    = {},
-  sectorColors = {},
+  orderInfo      = {},
+  sectorColors   = {},
+  -- Name groups start closed and stay as the player leaves them, the way vanilla's own
+  -- expansion tables live for the UI session rather than for one opening of the map.
+  expandedGroups = {},
 }
 
 -- Right-bar option that governs each kind of row.
@@ -173,8 +176,8 @@ function data.getObjectInfo(instance, component)
   end
 
   local id64 = ConvertIDTo64Bit(component)
-  local name, isPlayerOwned, hull, purpose, uiRelation, sector, classId, realClassId, idCode, fleetName, subordinateGroup, macro, isDeployable =
-      GetComponentData(component, "name", "isplayerowned", "hullpercent", "primarypurpose", "uirelation", "sector",
+  local name, isPlayerOwned, hull, purpose, uiRelation, sector, sectorId, classId, realClassId, idCode, fleetName, subordinateGroup, macro, isDeployable =
+      GetComponentData(component, "name", "isplayerowned", "hullpercent", "primarypurpose", "uirelation", "sector", "sectorid",
         "classid", "realclassid", "idcode", "fleetname", "subordinategroup", "macro", "isdeployable")
 
   -- These six keys keep vanilla's spelling because Helper's sorters read them
@@ -193,6 +196,7 @@ function data.getObjectInfo(instance, component)
     purpose          = purpose,
     relation         = uiRelation,
     sector           = sector,
+    sectorId         = sectorId,
     subordinateGroup = subordinateGroup,
     isPlayerOwned    = isPlayerOwned,
     isDeployable     = isDeployable or false,
@@ -846,6 +850,30 @@ local function isDeployable(info)
     or Helper.isComponentClass(info.classid, "collectablewares")) and true or false
 end
 
+--- Deployables of one name as a single node: what the player has, not each copy of it.
+--- A name held by one object is no group and takes the plain object row.
+--- Grouped after the row gates, so a count states what the tab actually lists.
+local function groupByName(instance, items)
+  local groups, byName = {}, {}
+  for _, component in ipairs(items) do
+    local info = data.getObjectInfo(instance, component)
+    if data.passesFilter(info) and data.passesSearch(info.id64) then
+      local name  = info.name or ""
+      local group = byName[name]
+      if group == nil then
+        group = { name = name, items = {}, sector = info.sector, sectorId = info.sectorId }
+        byName[name] = group
+        groups[#groups + 1] = group
+      elseif group.sector ~= info.sector then
+        -- A shared sector is worth stating on the group row; a mixed one is false, not a name.
+        group.sector = false
+      end
+      group.items[#group.items + 1] = component
+    end
+  end
+  return groups
+end
+
 local function collectPlayerObjects(instance)
   local infoTableData = eic.menu.infoTableData[instance]
 
@@ -1032,6 +1060,14 @@ function data.collect(instance, view)
         none = "-- " .. ReadText(1001, 34) .. " --",
       }
     end
+    if scope == "deployables" then
+      sections[#sections + 1] = {
+        id = "owneddeployables", kind = "deployables",
+        items = infoTableData.deployables,
+        groups = groupByName(instance, infoTableData.deployables),
+        none = "-- " .. ReadText(1001, 34) .. " --",
+      }
+    end
     if scope == nil then
       infoTableData.constructionShips = collectConstructionShips()
       sections[#sections + 1] = {
@@ -1041,8 +1077,9 @@ function data.collect(instance, view)
     end
   end
 
-  eic.Trace("collected %d station(s), %d fleet(s), %d unassigned, %d ship(s)",
-    #infoTableData.stations, #infoTableData.fleetLeaderShips, #infoTableData.unassignedShips, #infoTableData.ships)
+  eic.Trace("collected %d station(s), %d fleet(s), %d unassigned, %d ship(s), %d deployable(s)",
+    #infoTableData.stations, #infoTableData.fleetLeaderShips, #infoTableData.unassignedShips,
+    #infoTableData.ships, #infoTableData.deployables)
   return sections
 end
 
@@ -1110,7 +1147,14 @@ function data.expandTargets(instance, sections)
   local deep    = (eic.getOption("expandScope") == "full")
   local targets = {}
   for _, section in ipairs(sections) do
-    if section.kind ~= "construction" then
+    if section.kind == "deployables" then
+      -- A group holds objects with nothing under them, so the scope makes no difference here.
+      for _, group in ipairs(section.groups) do
+        if #group.items > 1 then
+          targets[#targets + 1] = { kind = "namegroup", key = group.name }
+        end
+      end
+    elseif section.kind ~= "construction" then
       for _, component in ipairs(section.items) do
         walkNode(instance, component, deep, targets)
       end
@@ -1121,7 +1165,9 @@ end
 
 function data.isExpanded(target)
   local menu = eic.menu
-  if target.kind == "subordinates" then
+  if target.kind == "namegroup" then
+    return data.expandedGroups[target.key] and true or false
+  elseif target.kind == "subordinates" then
     return menu.isSubordinateExtended(target.key, target.group)
   elseif target.kind == "dockedships" then
     return menu.isDockedShipsExtended(target.key, target.isStation)
@@ -1138,12 +1184,15 @@ function data.allExpanded(targets)
   return true
 end
 
---- The three tables read their absent value differently - a group and a docked ship default to
---- open, a property row and a station's dock to closed - so collapsing is nil in one and false
---- in the other, and setting the wrong one reads back as still expanded.
+--- The three vanilla tables read their absent value differently - a group and a docked ship
+--- default to open, a property row and a station's dock to closed - so collapsing is nil in one
+--- and false in the other, and setting the wrong one reads back as still expanded. A name group
+--- is ours and absent means closed, which is how the deployables tab opens.
 function data.setExpanded(target, expanded)
   local menu = eic.menu
-  if target.kind == "subordinates" then
+  if target.kind == "namegroup" then
+    data.expandedGroups[target.key] = expanded or nil
+  elseif target.kind == "subordinates" then
     menu.extendedsubordinates[target.key .. target.group] = expanded or false
   elseif target.kind == "dockedships" then
     if expanded then

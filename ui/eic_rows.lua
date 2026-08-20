@@ -227,8 +227,6 @@ local function buildContext(instance, layout, component, iteration, index, info)
     mouseOver = (mouseOver ~= "") and (mouseOver .. "\n\n" .. alertMouseOver) or alertMouseOver
   end
 
-  local sectorId, locationText = GetComponentData(component, "sectorid", "sector")
-
   local ctx = {
     view              = view,
     -- The section the row was emitted under, nested rows included; alternating colour is per section.
@@ -252,8 +250,8 @@ local function buildContext(instance, layout, component, iteration, index, info)
     mouseOver         = mouseOver,
     alert             = alert,
     fleetName         = "",
-    sectorId          = sectorId,
-    locationText      = locationText or "",
+    sectorId          = info.sectorId,
+    locationText      = info.sector or "",
     orderText         = "",
     actionText        = "",
     fleetTypes        = {},
@@ -262,7 +260,8 @@ local function buildContext(instance, layout, component, iteration, index, info)
     expand            = nil,
   }
 
-  if ctx.kind == "ship" then
+  -- Asked for only where a column shows it; the deployables tab has neither.
+  if (ctx.kind == "ship") and (layout.byId.order or layout.byId.action) then
     ctx.orderText, ctx.actionText = data.getOrderText(component)
   elseif not isConstruction then
     -- No entry cap: the cell spans the order and activity columns, so every type fits.
@@ -277,9 +276,10 @@ end
 
 -- The alternating-colour flag per section; construction rows paint their own background.
 local SECTION_ALT_OPTION = {
-  ownedstations = "altRowStations",
-  ownedfleets   = "altRowFleets",
-  ownedships    = "altRowShips",
+  ownedstations    = "altRowStations",
+  ownedfleets      = "altRowFleets",
+  ownedships       = "altRowShips",
+  owneddeployables = "altRowDeployables",
 }
 
 local function isDimmedRow(ctx)
@@ -565,6 +565,79 @@ local function createSection(ftable, layout, instance, section, numDisplayed)
   return numDisplayed
 end
 
+--- The header of a name group: the common name where an object row has its name, the sector
+--- when every copy shares one, and how many there are where the copies show their hull.
+local function createGroupRow(rowGroup, layout, group, index)
+  local menu     = eic.menu
+  local target   = { kind = "namegroup", key = group.name }
+  local expanded = data.isExpanded(target)
+  local ctx      = { section = layout.sectionId, index = index, bgColor = Color["row_background"] }
+
+  local row = rowGroup:addRow("namegroup", { bgColor = rowBackground(ctx) })
+  row[1]:createButton(expandButtonColors(ctx)):setText(expanded and "-" or "+", { halign = "center" })
+  row[1].handlers.onClick = function()
+    data.setExpanded(target, not expanded)
+    return menu.refreshInfoFrame()
+  end
+
+  local nameEntry = layout.byId.name
+  local nameCell  = row[nameEntry.first]
+  if nameEntry.span > 1 then
+    nameCell:setColSpan(nameEntry.span)
+  end
+  nameCell:createText(group.name, { font = Helper.standardFontBold, color = menu.holomapcolor.playercolor })
+  row[1].properties.height = nameCell:getMinTextHeight(false)
+
+  local sectorEntry = layout.byId.sector
+  if sectorEntry and group.sector then
+    local cell = row[sectorEntry.first]
+    if sectorEntry.span > 1 then
+      cell:setColSpan(sectorEntry.span)
+    end
+    cell:createText(group.sector, { halign = "center", color = data.getSectorColor(group.sectorId) })
+  end
+
+  local hullEntry = layout.byId.hullBar
+  if hullEntry then
+    row[hullEntry.first]:createText(tostring(#group.items),
+      { halign = "right", font = Helper.standardFontBold, color = menu.holomapcolor.playercolor })
+  end
+
+  return expanded
+end
+
+--- Deployables listed by what they are: one row per repeated name, its copies under it when open.
+local function createDeployableSection(ftable, layout, instance, section, numDisplayed)
+  layout.sectionId = section.id
+
+  local rowGroup = eic.isV9 and ftable:addRowGroup({}) or ftable
+  local before   = numDisplayed
+  local index    = 0
+
+  for _, group in ipairs(section.groups) do
+    index = index + 1
+    if #group.items == 1 then
+      numDisplayed = createObjectRow(ftable, rowGroup, layout, instance, group.items[1], 0, nil, index, numDisplayed)
+    else
+      local expanded = createGroupRow(rowGroup, layout, group, index)
+      numDisplayed = numDisplayed + 1
+      if expanded then
+        for _, component in ipairs(group.items) do
+          index = index + 1
+          numDisplayed = createObjectRow(ftable, rowGroup, layout, instance, component, 1, nil, index, numDisplayed)
+        end
+      end
+    end
+  end
+
+  if numDisplayed == before then
+    local row = rowGroup:addRow(section.id, { bgColor = Color["frame_background_semitransparent"] })
+    row[1]:setColSpan(layout.total):createText(section.none, { halign = "center" })
+  end
+
+  return numDisplayed
+end
+
 local function createConstructionRow(rowGroup, layout, component, construction, iteration)
   local menu  = eic.menu
   local split = splitColumn(layout)
@@ -791,6 +864,8 @@ function rows.createInfoTable(frame, view, instance, border)
   for _, section in ipairs(sections) do
     if section.kind == "construction" then
       createConstructionSection(ftable, layout, section)
+    elseif section.kind == "deployables" then
+      numDisplayed = createDeployableSection(ftable, layout, instance, section, numDisplayed)
     else
       numDisplayed = createSection(ftable, layout, instance, section, numDisplayed)
     end
