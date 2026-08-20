@@ -5,7 +5,7 @@
         <page id="1972092440" title="Centro informazioni" descr="" voice="no">
             <!-- mod identity -->
             <t id="1">Centro informazioni</t>
-            <t id="2">Aggiunge alla barra laterale della mappa un ampio pannello Info Center a schede: le tue stazioni, flotte e navi nello stile Proprietà del gioco, con una scheda per ogni disposizione di colonne.</t>
+            <t id="2">Aggiunge alla barra laterale della mappa un ampio pannello Info Center a schede: le tue stazioni, flotte e navi nello stile Proprietà del gioco, ogni scheda con il proprio insieme di colonne.</t>
 
             <!-- sidebar entries -->
             <t id="100">Centro informazioni</t>

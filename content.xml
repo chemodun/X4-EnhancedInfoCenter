@@ -9,54 +9,54 @@
   sync="false"
   enabled="true"
   lastupdate=""
-  description="Adds a wide, tabbed Info Center panel to the map sidebar: your stations, fleets and ships in the vanilla Property Owned style, with one tab per column layout.">
+  description="Adds a wide, tabbed Info Center panel to the map sidebar: your stations, fleets and ships in the vanilla Property Owned style, each tab showing its own set of columns.">
   <text language="7"
-    description="Adds a wide, tabbed Info Center panel to the map sidebar: your stations, fleets and ships in the vanilla Property Owned style, with one tab per column layout."></text>
+    description="Adds a wide, tabbed Info Center panel to the map sidebar: your stations, fleets and ships in the vanilla Property Owned style, each tab showing its own set of columns."></text>
   <!-- French -->
   <text language="33"
-    description="Ajoute au panneau latéral de la carte un large panneau Info Center à onglets : vos stations, flottes et vaisseaux dans le style Propriétés du jeu, avec un onglet par disposition de colonnes."></text>
+    description="Ajoute au panneau latéral de la carte un large panneau Info Center à onglets : vos stations, flottes et vaisseaux dans le style Propriétés du jeu, chaque onglet avec son propre jeu de colonnes."></text>
   <!-- Spanish -->
   <text language="34"
-    description="Añade a la barra lateral del mapa un amplio panel Info Center con pestañas: tus estaciones, flotas y naves con el estilo de Propiedades del juego, con una pestaña por cada disposición de columnas."></text>
+    description="Añade a la barra lateral del mapa un amplio panel Info Center con pestañas: tus estaciones, flotas y naves con el estilo de Propiedades del juego, cada pestaña con su propio conjunto de columnas."></text>
   <!-- Italian -->
   <text language="39"
-    description="Aggiunge alla barra laterale della mappa un ampio pannello Info Center a schede: le tue stazioni, flotte e navi nello stile Proprietà del gioco, con una scheda per ogni disposizione di colonne."></text>
+    description="Aggiunge alla barra laterale della mappa un ampio pannello Info Center a schede: le tue stazioni, flotte e navi nello stile Proprietà del gioco, ogni scheda con il proprio insieme di colonne."></text>
   <!-- Czech -->
   <text language="42"
-    description="Přidává do postranního panelu mapy široký panel Info Center s kartami: vaše stanice, flotily a lodě ve stylu herního seznamu majetku, s jednou kartou pro každé rozložení sloupců."></text>
+    description="Přidává do postranního panelu mapy široký panel Info Center s kartami: vaše stanice, flotily a lodě ve stylu herního seznamu majetku, každá karta s vlastní sadou sloupců."></text>
   <!-- English -->
   <text language="44"
-    description="Adds a wide, tabbed Info Center panel to the map sidebar: your stations, fleets and ships in the vanilla Property Owned style, with one tab per column layout."></text>
+    description="Adds a wide, tabbed Info Center panel to the map sidebar: your stations, fleets and ships in the vanilla Property Owned style, each tab showing its own set of columns."></text>
   <!-- Polish -->
   <text language="48"
-    description="Dodaje do paska bocznego mapy szeroki panel Info Center z zakładkami: twoje stacje, floty i statki w stylu listy własności z gry, z jedną zakładką na każdy układ kolumn."></text>
+    description="Dodaje do paska bocznego mapy szeroki panel Info Center z zakładkami: twoje stacje, floty i statki w stylu listy własności z gry, każda zakładka z własnym zestawem kolumn."></text>
   <!-- German -->
   <text language="49"
-    description="Fügt der Seitenleiste der Karte ein breites Info-Center-Panel mit Reitern hinzu: deine Stationen, Flotten und Schiffe im Stil der Besitzliste, mit einem Reiter je Spaltenanordnung."></text>
+    description="Fügt der Seitenleiste der Karte ein breites Info-Center-Panel mit Reitern hinzu: deine Stationen, Flotten und Schiffe im Stil der Besitzliste, wobei jeder Reiter seinen eigenen Spaltensatz zeigt."></text>
   <!-- Portuguese -->
   <text language="55"
-    description="Adiciona à barra lateral do mapa um amplo painel Info Center com abas: suas estações, frotas e naves no estilo da lista de propriedades do jogo, com uma aba por disposição de colunas."></text>
+    description="Adiciona à barra lateral do mapa um amplo painel Info Center com abas: suas estações, frotas e naves no estilo da lista de propriedades do jogo, cada aba com seu próprio conjunto de colunas."></text>
   <!-- Japanese -->
   <text language="81"
-    description="マップのサイドバーにタブ付きの広いインフォセンターパネルを追加します。所有物リストと同じ見た目でステーション・艦隊・艦船を表示し、列の構成ごとにタブを切り替えられます。"></text>
+    description="マップのサイドバーにタブ付きの広いインフォセンターパネルを追加します。所有物リストと同じ見た目でステーション・艦隊・艦船を表示し、各タブがそれぞれの列構成を表示します。"></text>
   <!-- Korean -->
   <text language="82"
-    description="지도 사이드바에 탭이 있는 넓은 인포 센터 패널을 추가합니다. 소유 자산 목록과 같은 형식으로 정거장, 함대, 함선을 보여주며 열 구성마다 탭이 하나씩 있습니다."></text>
+    description="지도 사이드바에 탭이 있는 넓은 인포 센터 패널을 추가합니다. 소유 자산 목록과 같은 형식으로 정거장, 함대, 함선을 보여주며 각 탭은 저마다의 열 구성을 보여줍니다."></text>
   <!-- Chinese Simplified -->
   <text language="86"
-    description="在地图侧边栏中添加一个带标签页的宽信息中心面板：以原版资产列表的样式显示你的空间站、舰队和舰船，每种列布局对应一个标签页。"></text>
+    description="在地图侧边栏中添加一个带标签页的宽信息中心面板：以原版资产列表的样式显示你的空间站、舰队和舰船，每个标签页显示各自的一组列。"></text>
   <!-- Chinese Traditional -->
   <text language="88"
-    description="在地圖側邊欄中新增一個帶標籤頁的寬資訊中心面板：以原版資產列表的樣式顯示你的太空站、艦隊和艦船，每種欄位配置對應一個標籤頁。"></text>
+    description="在地圖側邊欄中新增一個帶標籤頁的寬資訊中心面板：以原版資產列表的樣式顯示你的太空站、艦隊和艦船，每個標籤頁顯示各自的一組欄位。"></text>
   <!-- Turkish -->
   <text language="90"
-    description="Harita kenar çubuğuna sekmeli, geniş bir Info Center paneli ekler: istasyonlarınızı, filolarınızı ve gemilerinizi oyunun mülk listesi görünümünde, her sütun düzeni için bir sekmeyle gösterir."></text>
+    description="Harita kenar çubuğuna sekmeli, geniş bir Info Center paneli ekler: istasyonlarınızı, filolarınızı ve gemilerinizi oyunun mülk listesi görünümünde gösterir; her sekmenin kendi sütun grubu vardır."></text>
   <!-- Bulgarian -->
   <text language="359"
-    description="Добавя широк панел Info Center с раздели в страничната лента на картата: вашите станции, флоти и кораби в стила на списъка със собственост, с по един раздел за всяко подреждане на колоните."></text>
+    description="Добавя широк панел Info Center с раздели в страничната лента на картата: вашите станции, флоти и кораби в стила на списъка със собственост, като всеки раздел показва собствен набор от колони."></text>
   <!-- Ukrainian -->
   <text language="380"
-    description="Додає до бічної панелі карти широку панель Info Center із вкладками: ваші станції, флоти та кораблі у стилі списку власності, з окремою вкладкою для кожного розташування стовпців."></text>
+    description="Додає до бічної панелі карти широку панель Info Center із вкладками: ваші станції, флоти та кораблі у стилі списку власності, кожна вкладка з власним набором стовпців."></text>
   <dependency version="800"></dependency>
   <dependency id="kuerteeUIExtensionsAndHUD" name="kuertee UI Extensions and HUD"></dependency>
   <dependency id="ws_2042901274" optional="false" name="SirNukes Mod Support APIs" version="195"></dependency>

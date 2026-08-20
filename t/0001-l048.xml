@@ -5,7 +5,7 @@
         <page id="1972092440" title="Centrum informacyjne" descr="" voice="no">
             <!-- mod identity -->
             <t id="1">Centrum informacyjne</t>
-            <t id="2">Dodaje do paska bocznego mapy szeroki panel Info Center z zakładkami: twoje stacje, floty i statki w stylu listy własności z gry, z jedną zakładką na każdy układ kolumn.</t>
+            <t id="2">Dodaje do paska bocznego mapy szeroki panel Info Center z zakładkami: twoje stacje, floty i statki w stylu listy własności z gry, każda zakładka z własnym zestawem kolumn.</t>
 
             <!-- sidebar entries -->
             <t id="100">Centrum informacyjne</t>

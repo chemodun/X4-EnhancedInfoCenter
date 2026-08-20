@@ -5,7 +5,7 @@
         <page id="1972092440" title="Info Center" descr="" voice="no">
             <!-- mod identity -->
             <t id="1">Info Center</t>
-            <t id="2">Adds a wide, tabbed Info Center panel to the map sidebar: your stations, fleets and ships in the vanilla Property Owned style, with one tab per column layout.</t>
+            <t id="2">Adds a wide, tabbed Info Center panel to the map sidebar: your stations, fleets and ships in the vanilla Property Owned style, each tab showing its own set of columns.</t>
 
             <!-- sidebar entries -->
             <t id="100">Info Center</t>

@@ -5,7 +5,7 @@
         <page id="1972092440" title="Informationszentrale" descr="" voice="no">
             <!-- mod identity -->
             <t id="1">Informationszentrale</t>
-            <t id="2">Fügt der Seitenleiste der Karte ein breites Info-Center-Panel mit Reitern hinzu: deine Stationen, Flotten und Schiffe im Stil der Besitzliste, mit einem Reiter je Spaltenanordnung.</t>
+            <t id="2">Fügt der Seitenleiste der Karte ein breites Info-Center-Panel mit Reitern hinzu: deine Stationen, Flotten und Schiffe im Stil der Besitzliste, wobei jeder Reiter seinen eigenen Spaltensatz zeigt.</t>
 
             <!-- sidebar entries -->
             <t id="100">Informationszentrale</t>

@@ -5,7 +5,7 @@
         <page id="1972092440" title="Centre d'information" descr="" voice="no">
             <!-- mod identity -->
             <t id="1">Centre d'information</t>
-            <t id="2">Ajoute au panneau latéral de la carte un large panneau Info Center à onglets : vos stations, flottes et vaisseaux dans le style Propriétés du jeu, avec un onglet par disposition de colonnes.</t>
+            <t id="2">Ajoute au panneau latéral de la carte un large panneau Info Center à onglets : vos stations, flottes et vaisseaux dans le style Propriétés du jeu, chaque onglet avec son propre jeu de colonnes.</t>
 
             <!-- sidebar entries -->
             <t id="100">Centre d'information</t>

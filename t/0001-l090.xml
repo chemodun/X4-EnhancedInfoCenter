@@ -5,7 +5,7 @@
         <page id="1972092440" title="Bilgi Merkezi" descr="" voice="no">
             <!-- mod identity -->
             <t id="1">Bilgi Merkezi</t>
-            <t id="2">Harita kenar çubuğuna sekmeli, geniş bir Info Center paneli ekler: istasyonlarınızı, filolarınızı ve gemilerinizi oyunun mülk listesi görünümünde, her sütun düzeni için bir sekmeyle gösterir.</t>
+            <t id="2">Harita kenar çubuğuna sekmeli, geniş bir Info Center paneli ekler: istasyonlarınızı, filolarınızı ve gemilerinizi oyunun mülk listesi görünümünde gösterir; her sekmenin kendi sütun grubu vardır.</t>
 
             <!-- sidebar entries -->
             <t id="100">Bilgi Merkezi</t>

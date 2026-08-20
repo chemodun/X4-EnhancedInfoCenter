@@ -5,7 +5,7 @@
         <page id="1972092440" title="Centro de información" descr="" voice="no">
             <!-- mod identity -->
             <t id="1">Centro de información</t>
-            <t id="2">Añade a la barra lateral del mapa un amplio panel Info Center con pestañas: tus estaciones, flotas y naves con el estilo de Propiedades del juego, con una pestaña por cada disposición de columnas.</t>
+            <t id="2">Añade a la barra lateral del mapa un amplio panel Info Center con pestañas: tus estaciones, flotas y naves con el estilo de Propiedades del juego, cada pestaña con su propio conjunto de columnas.</t>
 
             <!-- sidebar entries -->
             <t id="100">Centro de información</t>

@@ -5,7 +5,7 @@
         <page id="1972092440" title="Informační centrum" descr="" voice="no">
             <!-- mod identity -->
             <t id="1">Informační centrum</t>
-            <t id="2">Přidává do postranního panelu mapy široký panel Info Center s kartami: vaše stanice, flotily a lodě ve stylu herního seznamu majetku, s jednou kartou pro každé rozložení sloupců.</t>
+            <t id="2">Přidává do postranního panelu mapy široký panel Info Center s kartami: vaše stanice, flotily a lodě ve stylu herního seznamu majetku, každá karta s vlastní sadou sloupců.</t>
 
             <!-- sidebar entries -->
             <t id="100">Informační centrum</t>

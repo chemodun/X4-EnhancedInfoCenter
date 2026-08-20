@@ -5,7 +5,7 @@
         <page id="1972092440" title="Centro de informações" descr="" voice="no">
             <!-- mod identity -->
             <t id="1">Centro de informações</t>
-            <t id="2">Adiciona à barra lateral do mapa um amplo painel Info Center com abas: suas estações, frotas e naves no estilo da lista de propriedades do jogo, com uma aba por disposição de colunas.</t>
+            <t id="2">Adiciona à barra lateral do mapa um amplo painel Info Center com abas: suas estações, frotas e naves no estilo da lista de propriedades do jogo, cada aba com seu próprio conjunto de colunas.</t>
 
             <!-- sidebar entries -->
             <t id="100">Centro de informações</t>
