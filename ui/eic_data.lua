@@ -329,12 +329,14 @@ function data.getSectorColor(sectorId)
 end
 
 --- One cell of fleet-type icons, shared by the fleet column and the subordinate group rows.
-function data.fleetTypesText(fleetTypes)
+--- defaultColor paints the entries that carry no colour of their own.
+function data.fleetTypesText(fleetTypes, defaultColor)
   local parts = {}
   for _, entry in ipairs(fleetTypes) do
     local text = string.format("\027[%s]%s", entry.icon, entry.count and tostring(entry.count) or "")
-    if entry.color then
-      text = Helper.convertColorToText(entry.color) .. text .. "\027X"
+    local color = entry.color or defaultColor
+    if color then
+      text = Helper.convertColorToText(color) .. text .. "\027X"
     end
     parts[#parts + 1] = text
   end

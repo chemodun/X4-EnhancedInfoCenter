@@ -426,32 +426,45 @@ local function createDockedSection(rowGroup, layout, instance, component, iterat
 
   -- The summary counts what the block lists, so a filtered dock does not head a short list
   -- with the full tally.
-  local playerShips = {}
+  local playerShips, foreignShips = {}, 0
   for _, docked in ipairs(dockedShips) do
-    if data.getObjectInfo(instance, docked.component).isPlayerOwned
-        and ((not flt.active()) or flt.visible(instance, layout.view, docked.component)) then
-      playerShips[#playerShips + 1] = docked
-    end
-  end
-  if #playerShips > 0 then
-    -- Colour goes inline, so the fleet icons keep their own.
-    local text = Helper.convertColorToText(menu.holomapcolor.playercolor)
-        .. "\27[order_dockat] " .. #playerShips .. "\27X"
-    if fleetColumns(layout) then
-      local fleetText = data.fleetTypesText(data.getGroupFleetTypes(instance, playerShips))
-      if fleetText ~= "" then
-        text = fleetText .. "  " .. text
+    if (not flt.active()) or flt.visible(instance, layout.view, docked.component) then
+      if data.getObjectInfo(instance, docked.component).isPlayerOwned then
+        playerShips[#playerShips + 1] = docked
+      else
+        foreignShips = foreignShips + 1
       end
     end
+  end
+
+  -- Player ships are their fleet-type icons in player colour, or the dock icon on a view without
+  -- the fleet column; foreign ships are the plain dock icon, absent when the dock holds none.
+  local text = ""
+  if #playerShips > 0 then
+    if fleetColumns(layout) then
+      text = data.fleetTypesText(data.getGroupFleetTypes(instance, playerShips),
+        menu.holomapcolor.playercolor)
+    end
+    if text == "" then
+      text = Helper.convertColorToText(menu.holomapcolor.playercolor)
+          .. "\27[order_dockat] " .. #playerShips .. "\27X"
+    end
+  end
+  if foreignShips > 0 then
+    local foreignText = "\27[order_dockat] " .. foreignShips
+    text = (text ~= "") and (text .. "  " .. foreignText) or foreignText
+  end
+
+  local cargoFirst, cargoLast = cargoColumns(layout)
+  if text ~= "" then
     -- On a Trade view the dock count stops short of the cargo column, which takes the summed holds.
-    local cargoFirst, cargoLast = cargoColumns(layout)
     local countLast = (cargoFirst or (layout.total + 1)) - 1
     row[split]:setColSpan(countLast - split + 1):createText(text, { halign = "right" })
-    if cargoFirst then
-      local summary, mouseOver = data.getGroupCargoText(instance, playerShips)
-      row[cargoFirst]:setColSpan(cargoLast - cargoFirst + 1):createText(summary,
-        { halign = "right", mouseOverText = mouseOver })
-    end
+  end
+  if cargoFirst and (#playerShips > 0) then
+    local summary, mouseOver = data.getGroupCargoText(instance, playerShips)
+    row[cargoFirst]:setColSpan(cargoLast - cargoFirst + 1):createText(summary,
+      { halign = "right", mouseOverText = mouseOver })
   end
 
   if IsSameComponent(component, menu.highlightedbordercomponent) and (menu.highlightedborderstationcategory == "dockedships") then
