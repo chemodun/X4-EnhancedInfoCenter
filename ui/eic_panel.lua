@@ -117,9 +117,8 @@ local function applyTabSelection(ftable, key)
 end
 
 --- Button size shared by every strip, counted in halves: two per tab, one per spacer, one for
---- the leading indent, plus a border between neighbouring columns and tables. `reserved` is
---- what the pager takes off the end of the same line, so the strips can never grow into it.
-local function tabButtonWidth(frame, reserved)
+--- the leading indent, plus a border between neighbouring columns and tables.
+local function tabButtonWidth(frame)
   local halves  = 1
   local borders = eic.NUMSTRIPS - 1
   for strip = 1, eic.NUMSTRIPS do
@@ -129,7 +128,7 @@ local function tabButtonWidth(frame, reserved)
     end
     borders = borders + #entries + eic.stripFirstColumn(strip) - 2
   end
-  local available = frame.properties.width - reserved - borders * Helper.borderSize
+  local available = frame.properties.width - borders * Helper.borderSize
   return math.min(eic.menu.sideBarWidth, math.floor(2 * available / halves))
 end
 
@@ -346,7 +345,7 @@ end
 
 --endregion
 
---region Pager
+--region View title and pager
 
 local pageEditBox = nil
 
@@ -381,8 +380,8 @@ local function pageEditDeactivated(_, text)
   end
 end
 
---- One line, stated up front: the list below starts at a height counted before it is built.
---- An arrow row is never shorter than the edit box standing in it.
+--- Every page widget is built at this height, never at the row's, since the title sets that.
+--- An arrow is never shorter than the edit box standing beside it.
 function panel.pagerHeight()
   local height = Helper.scaleY(eic.rowHeight)
   return (height < Helper.editboxMinHeight) and Helper.editboxMinHeight or height
@@ -394,57 +393,79 @@ local function pageColumnWidth()
     Helper.scaleFont(Helper.standardFont, eic.fontSize)) + Helper.scaleX(Helper.standardTextOffsetx))
 end
 
---- Stated before the pager is built, since the tab strips give up this much of their line for it.
-function panel.pagerWidth()
-  return 4 * panel.pagerHeight() + pageColumnWidth() + 4 * Helper.borderSize
-end
+--- The view name heads the list on a table of its own, between the strips and the list, since
+--- a fixed row cannot follow scrolling ones in the list's table and none of the list's columns
+--- is an arrow's width. The title takes the table when paging is off and gives up the five
+--- right-hand columns to the page control when it is on.
+function panel.createViewTitle(frame, border, y, paging)
+  local titleProperties = Helper.subTabTitleTextProperties or Helper.headerRowCenteredProperties
+  local numCols         = paging and 6 or 1
 
---- Vanilla's page control - first, previous, the page, next, last - on a table of its own,
---- since a fixed row cannot follow the list's scrolling ones and none of its columns is an
---- arrow's width either. It shares the tab strips' line, flush with the frame's right edge.
-function panel.createPager(frame, border, x, y)
-  local page      = eic.currentPage()
-  local count     = eic.pageInfo.count
-  local height    = panel.pagerHeight()
-  local width     = height
-  local pageWidth = pageColumnWidth()
-
-  local properties = {
-    tabOrder = eic.NUMSTRIPS + 2, reserveScrollBar = false,
-    x = x, y = y, width = panel.pagerWidth(),
-  }
+  -- The scroll bar is reserved the way the list below reserves it, so the title centres over
+  -- the same width the list's rows have and the page control ends on its last column.
+  local properties = { tabOrder = paging and (eic.NUMSTRIPS + 2) or 0, y = y }
   if border then
     properties.frameborder = border.id
+    properties.x           = Helper.standardContainerOffset
+    properties.width       = frame.properties.width - 2 * Helper.standardContainerOffset
   end
 
-  local pagerTable = frame:addTable(5, properties)
-  for _, col in ipairs({ 1, 2, 4, 5 }) do
-    pagerTable:setColWidth(col, width, false)
+  local titleTable = frame:addTable(numCols, properties)
+  if paging then
+    local arrowWidth = panel.pagerHeight()
+    for _, col in ipairs({ 2, 3, 5, 6 }) do
+      titleTable:setColWidth(col, arrowWidth, false)
+    end
+    titleTable:setColWidth(4, pageColumnWidth(), false)
   end
-  pagerTable:setColWidth(3, pageWidth, false)
 
-  local row = pagerTable:addRow(true, { fixed = true, borderBelow = false })
+  -- The page cells are filled in once the list has been built, so the title has to state the
+  -- row's height before them, and never under a page widget's. minRowHeight is a raw value,
+  -- so the edit box's pixel floor is carried back through the scale to be compared with one.
+  local title = {}
+  for key, value in pairs(titleProperties) do
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    title[key] = value
+  end
+  local floor = paging and math.ceil(Helper.editboxMinHeight / Helper.uiScale) or 0
+  title.minRowHeight = math.max(title.minRowHeight or 0, paging and eic.rowHeight or 0, floor)
+
+  local row = titleTable:addRow(paging, { fixed = true, bgColor = title.cellBGColor })
+  row[1]:createText(eic.view().name, title)
+
+  if paging then
+    applyTabSelection(titleTable, "pager")
+  end
+
+  return titleTable, row
+end
+
+--- Vanilla's page control - first, previous, the page, next, last - in the columns the title
+--- gave up. Built after the list, since only the filled list knows its page count.
+function panel.fillPager(row)
+  local page   = eic.currentPage()
+  local count  = eic.pageInfo.count
+  local height = panel.pagerHeight()
+  -- The row stands at the title's height, which the title stated to be at least this one,
+  -- so every page widget is centred on it by hand.
+  local offsetY = math.max(0, math.floor((row:getHeight() - height) / 2))
+
   local function arrow(col, icon, active, target)
     row[col]:createButton({
-      scaling = false, width = width, height = height,
-      active = active, cellBGColor = Color["row_background"],
+      scaling = false, width = height, height = height, y = offsetY, active = active,
     }):setIcon(icon)
     row[col].handlers.onClick = function() return buttonSetPage(target) end
   end
 
-  arrow(1, "widget_arrow_skip_left_01", page > 1, 1)
-  arrow(2, "widget_arrow_left_01", page > 1, page - 1)
-  pageEditBox = row[3]:createEditBox({
-    description = ReadText(eic.PAGE, 315), scaling = false, height = height,
+  arrow(2, "widget_arrow_skip_left_01", page > 1, 1)
+  arrow(3, "widget_arrow_left_01", page > 1, page - 1)
+  pageEditBox = row[4]:createEditBox({
+    description = ReadText(eic.PAGE, 315), scaling = false, height = height, y = offsetY,
   }):setText(pageText(), { halign = "center", fontsize = eic.fontSize, scaling = true })
-  row[3].handlers.onEditBoxActivated   = pageEditActivated
-  row[3].handlers.onEditBoxDeactivated = pageEditDeactivated
-  arrow(4, "widget_arrow_right_01", page < count, page + 1)
-  arrow(5, "widget_arrow_skip_right_01", page < count, count)
-
-  applyTabSelection(pagerTable, "pager")
-
-  return pagerTable
+  row[4].handlers.onEditBoxActivated   = pageEditActivated
+  row[4].handlers.onEditBoxDeactivated = pageEditDeactivated
+  arrow(5, "widget_arrow_right_01", page < count, page + 1)
+  arrow(6, "widget_arrow_skip_right_01", page < count, count)
 end
 
 --endregion
@@ -498,7 +519,7 @@ function panel.createInfoFrame()
   end
 
   -- menu.infoTable is bound to the frame's first table, so the data table is created first
-  -- even though the title, the strips and the pager sit above it; every y here is explicit.
+  -- even though the header band, the strips and the view title sit above it; every y is explicit.
   local ftable, layout = rows.createInfoTable(menu.infoFrame, eic.view(), border)
   if ftable == nil then
     return
@@ -507,45 +528,41 @@ function panel.createInfoFrame()
   local contentY = panel.createTitleBar(menu.infoFrame, border):getFullHeight()
 
   -- The strips share one line, so the data table clears the height of one rather than the sum.
-  -- The pager shares it too, at the frame's right edge, and the strips are sized around it.
   carryTabSelection()
   local paging = eic.pagingOn()
   if not paging then
     tabs.pager = nil
   end
 
-  local stripY, stripX = contentY, 0
+  local stripX = 0
   local strips = {}
-  local buttonWidth = tabButtonWidth(menu.infoFrame, paging and (panel.pagerWidth() + Helper.borderSize) or 0)
+  local buttonWidth = tabButtonWidth(menu.infoFrame)
   for strip = 1, eic.NUMSTRIPS do
-    local tabTable = panel.createTabBar(menu.infoFrame, border, strip, buttonWidth, stripX, stripY)
+    local tabTable = panel.createTabBar(menu.infoFrame, border, strip, buttonWidth, stripX, contentY)
     if tabTable then
       stripX = stripX + tabTable.properties.width + Helper.borderSize
       strips[#strips + 1] = tabTable
     end
   end
 
-  -- The line is as tall as a strip, or as the pager on it if that is ever the taller of the two.
   local lineHeight = (#strips > 0) and strips[1]:getFullHeight() or 0
-  if paging and (lineHeight < panel.pagerHeight()) then
-    lineHeight = panel.pagerHeight()
-  end
   if lineHeight > 0 then
     contentY = contentY + lineHeight + Helper.standardContainerOffset
   end
 
+  -- The view name and the page control share the line right above the list, so the list's
+  -- window is what is left under a row that is already standing at its full height.
+  local titleTable, titleRow = panel.createViewTitle(menu.infoFrame, border, contentY, paging)
+  contentY = contentY + titleTable:getFullHeight()
+
   ftable.properties.y = contentY
   ftable.properties.maxVisibleHeight = Helper.viewHeight - contentY - menu.infoFrame.properties.y - Helper.frameBorder
 
-  -- Only the filled list knows its page count, so the pager is built last of all.
   rows.fillInfoTable(ftable, layout, "left")
 
-  local pager
+  -- Only the filled list knows its page count, so the page control is the last thing built.
   if paging then
-    -- Shorter than a tab button, so it centres on the strips' line, and flush with the
-    -- frame's right edge - the strips gave up exactly this much of that line for it.
-    local pagerY = stripY + math.floor((lineHeight - panel.pagerHeight()) / 2)
-    pager = panel.createPager(menu.infoFrame, border, menu.infoFrame.properties.width - panel.pagerWidth(), pagerY)
+    panel.fillPager(titleRow)
   end
   menu.numFixedRows = ftable.numfixedrows
 
@@ -571,9 +588,9 @@ function panel.createInfoFrame()
     connection = connection + 1
     tabTable:addConnection(connection, 2)
   end
-  if pager then
+  if paging then
     connection = connection + 1
-    pager:addConnection(connection, 2)
+    titleTable:addConnection(connection, 2)
   end
   ftable:addConnection(connection + 1, 2)
 

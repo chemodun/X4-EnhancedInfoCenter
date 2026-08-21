@@ -773,17 +773,10 @@ function rows.rowFullHeight(ftable, index)
   return height
 end
 
---- The first row a selection can land on; the title, the filter row and the sorter row
---- above it are fixed.
+--- The first row a selection can land on; the filter row and the sorter row above it are
+--- fixed. The view name is not among them - it heads its own table, over the page control.
 function rows.firstDataRow()
-  return 4
-end
-
---- The view name heads the object list: a strip is narrower than the frame, so it would not centre there.
-local function createTabTitleRow(ftable, layout)
-  local row = ftable:addRow(false, { fixed = true })
-  row[1]:setColSpan(layout.total):createText(layout.view.name,
-    Helper.subTabTitleTextProperties or Helper.headerRowCenteredProperties)
+  return 3
 end
 
 --- The whole-list counterpart of a row's own expand button, in the column those sit in.
@@ -1002,7 +995,6 @@ function rows.fillInfoTable(ftable, layout, instance)
   flt.prepare(instance, layout, sections)
 
   -- The table's only fixed rows, and numfixedrows is the index of the last of them.
-  createTabTitleRow(ftable, layout)
   flt.createRow(ftable, layout)
   createSorterRow(ftable, layout, instance, sections)
 
