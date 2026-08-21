@@ -531,8 +531,9 @@ createObjectRow = function(rowGroup, layout, instance, component, iteration, com
     local location = GetComponentData(component, "sectorid") or commanderLocation
 
     if subordinates.hasRendered and flt.subordinatesShown(key) then
-      -- The commander repeats itself above its subordinates, marked with a star.
-      if ctx.kind ~= "station" then
+      -- A fleet row names the fleet, so its own ship repeats below it, marked with a star. A
+      -- commanded ship expands under its own row and would only duplicate it.
+      if ctx.kind == "wing" then
         local repeatCtx = {}
         for k, v in pairs(ctx) do repeatCtx[k] = v end
         repeatCtx.kind              = "ship"
