@@ -105,42 +105,217 @@ local function carryTabSelection()
   end
 end
 
---- Where a rebuilt table comes up: a click states the position, a refresh keeps the outgoing one.
-local function applyTabSelection(ftable, key)
+--- Where a rebuilt table comes up: a click states the position, a refresh keeps the outgoing
+--- one. `buttons` names the columns the engine will take as the interactive cell - the window
+--- moves under the cursor and an arrow goes inactive at the end of the strip, so a carried
+--- column is pulled onto the nearest of them rather than onto whatever now stands there.
+local function applyTabSelection(ftable, key, buttons)
   local carry = tabs[key] or {}
   local set   = pending[key]
   pending[key] = nil
-  ftable:setSelectedRow((set and set.row) or carry.row or 0)
-  ftable:setSelectedCol((set and set.col) or carry.col or 0)
+
+  local col = (set and set.col) or carry.col or 0
+  if (col > 0) and buttons then
+    local nearest = 0
+    for _, button in ipairs(buttons) do
+      if (nearest == 0) or (math.abs(button - col) < math.abs(nearest - col)) then
+        nearest = button
+      end
+    end
+    col = nearest
+  end
+
+  -- Both tables this serves hold a single row, so a column without one would be a dead cursor.
+  local row = (set and set.row) or carry.row or 0
+  ftable:setSelectedRow(((col > 0) and (row < 1)) and 1 or row)
+  ftable:setSelectedCol(col)
   carry.widget = ftable
   tabs[key]    = carry
 end
 
---- Button size shared by every strip, counted in halves: two per tab, one per spacer, one for
---- the leading indent, plus a border between neighbouring columns and tables.
-local function tabButtonWidth(frame)
-  local halves  = 1
-  local borders = eic.NUMSTRIPS - 1
-  for strip = 1, eic.NUMSTRIPS do
-    local entries = eic.stripEntries(strip)
-    for _, entry in ipairs(entries) do
-      halves = halves + (entry.spacer and 1 or 2)
-    end
-    borders = borders + #entries + eic.stripFirstColumn(strip) - 2
-  end
-  local available = frame.properties.width - borders * Helper.borderSize
-  return math.min(eic.menu.sideBarWidth, math.floor(2 * available / halves))
+-- The window over eic.VIEWS: `tabOffset` is the first cell on screen. The button keeps vanilla's
+-- size whatever the frame width is, so a strip too long for the frame is reached with the two
+-- arrow cells rather than by shrinking the button - and with it the strip's height.
+local tabOffset       = 1
+local ensureTabInView = true
+local pendingCategory = nil
+
+--- Half a button is what a group spacer, the leading indent and an arrow cell each take.
+local function tabCellWidth(entry, width)
+  return entry.spacer and math.floor(width / 2) or width
 end
 
---- Where the next strip starts. Floored the way the widget floors each column, or they drift apart.
-local function stripWidth(strip, width)
-  local entries = eic.stripEntries(strip)
-  local first   = eic.stripFirstColumn(strip)
-  local total   = (first > 1) and math.floor(width / 2) or 0
-  for _, entry in ipairs(entries) do
-    total = total + (entry.spacer and math.floor(width / 2) or width)
+--- A group spacer never opens the window, so a step lands on the next tab in that direction.
+local function tabCellStep(index, step)
+  while eic.VIEWS[index] and eic.VIEWS[index].spacer do
+    index = index + step
   end
-  return total + (#entries + first - 2) * Helper.borderSize
+  return index
+end
+
+--- What a window of cells costs. A scrolling strip carries two columns beyond its cells: the
+--- trailing arrow, and the filler in front of it that has no width of its own. Every piece is
+--- counted with a height cell even where a group spacer ends up carrying that, and N columns
+--- cost N-1 borders however they are cut - both a few pixels to the good, never short.
+local function windowWidth(layout, first, last, scroll)
+  local content = 1 + (last - first + 1) + (scroll and 2 or 0)
+  local tables  = math.ceil(content / (Helper.maxTableCols - 2))
+  local total   = layout.half + (scroll and layout.half or 0) + tables * layout.pad
+  for i = first, last do
+    total = total + tabCellWidth(eic.VIEWS[i], layout.width)
+  end
+  return total + (content + tables - 1) * Helper.borderSize
+end
+
+--- Where the window sits at this frame width, and whether the arrows are needed at all.
+local function tabLayout(frame)
+  local count  = #eic.VIEWS
+  local width  = math.floor(eic.menu.sideBarWidth)
+  local layout = { width = width, half = math.floor(width / 2), pad = Helper.borderSize }
+  local avail  = frame.properties.width
+
+  -- Everything on screen: the leading half cell stays the plain indent it has always been.
+  if windowWidth(layout, 1, count, false) <= avail then
+    layout.first, layout.last = 1, count
+    ensureTabInView = false
+    return layout
+  end
+  layout.scroll = true
+
+  -- At least one cell is shown even where none fits, so a narrow frame is a strip, not two arrows.
+  local function fitFrom(first)
+    local last = first
+    while (last < count) and (windowWidth(layout, first, last + 1, true) <= avail) do
+      last = last + 1
+    end
+    return last
+  end
+
+  -- The furthest the window may be scrolled; one step past it would show empty space.
+  local lastStart = count
+  while (lastStart > 1) and (fitFrom(lastStart - 1) >= count) do
+    lastStart = lastStart - 1
+  end
+  lastStart = math.min(tabCellStep(lastStart, 1), count)
+
+  local first = tabCellStep(math.max(1, math.min(tabOffset, lastStart)), 1)
+
+  -- The tab the player just picked, or the one the panel opens on, is pulled into the window.
+  local index = ensureTabInView and eic.viewIndex(eic.viewMode)
+  if index then
+    if index < first then
+      first = index
+    else
+      while (first < index) and (fitFrom(first) < index) do
+        first = tabCellStep(first + 1, 1)
+      end
+    end
+  end
+  ensureTabInView = false
+
+  tabOffset    = first
+  layout.first = first
+  layout.last  = fitFrom(first)
+  return layout
+end
+
+--- The window as columns: the leading half cell, the cells themselves and, when the strip
+--- scrolls, the trailing arrow with a filler in front of it that states no width and so takes
+--- whatever the cells left over. Cut into evenly sized pieces of at most Helper.maxTableCols
+--- columns, so the arrow and its filler are never left as a piece of their own. The seam is a
+--- plain border, the same the columns are set apart by, so where it falls does not show.
+local function tabColumns(layout)
+  local cols = { { lead = true } }
+  for i = layout.first, layout.last do
+    cols[#cols + 1] = { entry = eic.VIEWS[i] }
+  end
+  if layout.scroll then
+    cols[#cols + 1] = { filler = true }
+    cols[#cols + 1] = { arrow = "right" }
+  end
+
+  -- Only the leading indent may draw nothing; the engine refuses a table whose first column
+  -- holds no widget, and the cursor lands there whenever the window has moved under it.
+  local function opensPiece(col)
+    return col.lead or col.arrow or (col.entry and (not col.entry.spacer))
+  end
+
+  -- Cut from the back, so the filler and the arrow behind it are always in the piece that is
+  -- stretched to the frame - a piece without the filler has no column to give the slack to and
+  -- the engine shrinks it to its content. Two columns of headroom each: the one a seam hands
+  -- back, and a height cell where the piece has no group spacer to state it.
+  local count  = math.ceil(#cols / (Helper.maxTableCols - 2))
+  local starts = {}
+  local ending = #cols
+  for piece = count, 1, -1 do
+    local start = (piece == 1) and 1 or math.max(1, ending - math.ceil(ending / piece) + 1)
+    -- A piece opens on a cell that draws something, so an empty one closes the piece before it.
+    while (start > 1) and (not opensPiece(cols[start])) do
+      start = start - 1
+    end
+    starts[piece] = start
+    ending = start - 1
+  end
+
+  local tables = {}
+  for piece = 1, count do
+    local first = starts[piece]
+    local last  = (piece < count) and (starts[piece + 1] - 1) or #cols
+
+    local part = {}
+    for j = first, last do
+      part[#part + 1] = cols[j]
+    end
+
+    -- A button cell only reaches the row's own height, so one empty cell of each piece states
+    -- it: a group spacer, the filler, or the leading indent where no arrow stands on it. A
+    -- piece holding none gets a narrow cell of its own, which is what keeps the seam clear.
+    local carrier
+    for _, col in ipairs(part) do
+      if (col.entry and col.entry.spacer) or col.filler or (col.lead and (not layout.scroll)) then
+        carrier = col
+        break
+      end
+    end
+    if carrier then
+      carrier.rowHeight = true
+    else
+      part[#part + 1] = { pad = true, rowHeight = true }
+    end
+
+    tables[#tables + 1] = part
+  end
+  return tables
+end
+
+local function tabColWidth(layout, col)
+  if col.filler then
+    return 0
+  elseif col.pad then
+    return layout.pad
+  elseif col.lead or col.arrow then
+    return layout.half
+  end
+  return tabCellWidth(col.entry, layout.width)
+end
+
+--- A table's own width: its columns, plus a border between neighbouring ones.
+local function stripWidth(layout, cols)
+  local width = -Helper.borderSize
+  for _, col in ipairs(cols) do
+    width = width + tabColWidth(layout, col) + Helper.borderSize
+  end
+  return width
+end
+
+local function buttonScrollTabs(step)
+  local first = tabCellStep(tabOffset + step, step)
+  if (first < 1) or (first > #eic.VIEWS) then
+    return
+  end
+  tabOffset = first
+  eic.Debug("tab strip scrolled to cell %d", first)
+  eic.menu.refreshInfoFrame()
 end
 
 --- The mod name on a table of its own, so the header band is not cut short by the strips' width.
@@ -160,62 +335,119 @@ function panel.createTitleBar(frame, border)
   return titleTable
 end
 
---- One piece of the tab strip. Seventeen cells are past Helper.maxTableCols in a single table,
---- so the strip is two tables side by side at the same y, reading as one unbroken icon row.
-function panel.createTabBar(frame, border, strip, width, x, y)
-  local entries  = eic.stripEntries(strip)
-  local firstCol = eic.stripFirstColumn(strip)
-  local numCols  = #entries + firstCol - 1
-  if numCols > Helper.maxTableCols then
-    eic.Error("tab bar %d needs %d columns, above the cap of %d", strip, numCols, Helper.maxTableCols)
-    return nil
-  end
-
-  -- The indent before the very first tab, half a button as a group spacer is.
-  local half    = math.floor(width / 2)
-  local titleBg = Color["frame_background_black"]
-
+--- One piece of the tab strip, drawn at the same y as its neighbour so the pieces read as one
+--- unbroken icon row. A window wider than Helper.maxTableCols columns cannot be a single table.
+function panel.createTabBar(frame, border, index, layout, cols, x, y, width)
   local properties = {
-    tabOrder = 1 + strip, reserveScrollBar = false,
-    x = x, y = y, width = stripWidth(strip, width),
+    tabOrder = 1 + index, reserveScrollBar = false,
+    x = x, y = y, width = width,
   }
   if border then
     properties.frameborder = border.id
   end
 
-  local tabTable = frame:addTable(numCols, properties)
-  if firstCol > 1 then
-    tabTable:setColWidth(1, half, false)
-  end
-  for i, entry in ipairs(entries) do
-    tabTable:setColWidth(firstCol + i - 1, entry.spacer and half or width, false)
+  local tabTable = frame:addTable(#cols, properties)
+  for i, col in ipairs(cols) do
+    -- The filler states no width, so it is handed what the columns that do have one left over.
+    if not col.filler then
+      tabTable:setColWidth(i, tabColWidth(layout, col), false)
+    end
   end
 
-  local row = tabTable:addRow("eic_tabs" .. strip, { fixed = true, bgColor = titleBg, borderBelow = false })
-  row[1]:setBackgroundColSpan(numCols)
-  -- A button cell only reaches the row's own height, so an empty cell carries the padding.
-  local padCell
-  for i, entry in ipairs(entries) do
-    local col = firstCol + i - 1
-    if entry.spacer then
-      padCell = padCell or row[col]
-    else
+  local row = tabTable:addRow("eic_tabs" .. index, {
+    fixed = true, bgColor = Color["frame_background_black"], borderBelow = false,
+  })
+  row[1]:setBackgroundColSpan(#cols)
+
+  -- Every column the cursor may come up on: an inactive button is not one of them.
+  local buttons = {}
+
+  local function arrow(cell, icon, active, step)
+    cell:createButton({
+      height = layout.width, width = layout.half, x = 0, y = Helper.standardContainerOffset,
+      scaling = false, bgColor = Color["row_title_background"], active = active,
+    }):setIcon(icon, {
+      color = Color["icon_normal"], scaling = false,
+      width = layout.half, height = layout.half,
+      y = math.floor((layout.width - layout.half) / 2),
+    })
+    cell.handlers.onClick = function() return buttonScrollTabs(step) end
+  end
+
+  for i, col in ipairs(cols) do
+    if col.rowHeight then
+      row[i]:createText(" ", {
+        fontsize = 1, x = 0, scaling = false,
+        minRowHeight = layout.width + 2 * Helper.standardContainerOffset,
+      })
+    elseif col.lead then
+      if layout.scroll then
+        local active = layout.first > 1
+        arrow(row[i], "widget_arrow_left_01", active, -1)
+        if active then
+          buttons[#buttons + 1] = i
+        end
+      end
+    elseif col.arrow then
+      local active = layout.last < #eic.VIEWS
+      arrow(row[i], "widget_arrow_right_01", active, 1)
+      if active then
+        buttons[#buttons + 1] = i
+      end
+    elseif col.entry and (not col.entry.spacer) then
+      local entry    = col.entry
       local selected = (entry.category == eic.viewMode)
-      row[col]:createButton({
-        height = width, width = width, x = 0, y = Helper.standardContainerOffset, scaling = false,
+      row[i]:createButton({
+        height = layout.width, width = layout.width, x = 0, y = Helper.standardContainerOffset,
+        scaling = false,
         bgColor = selected and Color["row_background_selected"] or Color["row_title_background"],
         mouseOverText = entry.name, active = not entry.pending,
       }):setIcon(entry.icon, { color = Color["icon_normal"] })
-      row[col].handlers.onClick = function() return panel.buttonSetView(entry.category) end
+      row[i].handlers.onClick = function() return panel.buttonSetView(entry.category) end
+      if not entry.pending then
+        buttons[#buttons + 1] = i
+      end
+      -- The tab a click asked for lands on whichever table ended up drawing it.
+      if entry.category == pendingCategory then
+        pending[index] = { row = 1, col = i }
+      end
     end
   end
-  if padCell then
-    padCell:createText(" ", { minRowHeight = width + 2 * Helper.standardContainerOffset, scaling = false })
-  end
 
-  applyTabSelection(tabTable, strip)
+  applyTabSelection(tabTable, index, buttons)
 
   return tabTable
+end
+
+--- The whole strip: the window over the tab cells, cut into tables side by side at one y.
+function panel.createTabBars(frame, border, y)
+  local layout = tabLayout(frame)
+  local pieces = tabColumns(layout)
+  local strips = {}
+  ---@type number
+  local x = 0
+
+  for index, cols in ipairs(pieces) do
+    -- A scrolling strip is stretched to the frame's edge, so its arrow stands flush right and
+    -- the filler in front of it swallows what the last tab that fitted left over.
+    local width = stripWidth(layout, cols)
+    if layout.scroll and (index == #pieces) then
+      width = frame.properties.width - x
+    end
+
+    strips[#strips + 1] = panel.createTabBar(frame, border, index, layout, cols, x, y, width)
+    x = x + width + Helper.borderSize
+  end
+  pendingCategory = nil
+
+  -- A window that shrank leaves behind the cursor of a table that is no longer built.
+  for key in pairs(tabs) do
+    if (type(key) == "number") and (key > #strips) then
+      tabs[key] = nil
+    end
+  end
+
+  return strips
 end
 
 function panel.buttonSetView(category)
@@ -229,9 +461,8 @@ function panel.buttonSetView(category)
   if not eic.viewOffersSorter(eic.view(), eic.sorterType) then
     eic.sorterType = "name"
   end
-  -- The icons are the strip's first row now that the title has a table of its own.
-  local strip, col = eic.stripPosition(category)
-  pending[strip] = { row = 1, col = col }
+  pendingCategory = category
+  ensureTabInView = true
 
   AddUITriggeredEvent(menu.name, eic.MODE .. "_" .. category)
   eic.Debug("view switched to %s", category)
@@ -397,13 +628,13 @@ end
 --- a fixed row cannot follow scrolling ones in the list's table and none of the list's columns
 --- is an arrow's width. The title takes the table when paging is off and gives up the five
 --- right-hand columns to the page control when it is on.
-function panel.createViewTitle(frame, border, y, paging)
+function panel.createViewTitle(frame, border, y, paging, numStrips)
   local titleProperties = Helper.subTabTitleTextProperties or Helper.headerRowCenteredProperties
   local numCols         = paging and 6 or 1
 
   -- The scroll bar is reserved the way the list below reserves it, so the title centres over
   -- the same width the list's rows have and the page control ends on its last column.
-  local properties = { tabOrder = paging and (eic.NUMSTRIPS + 2) or 0, y = y }
+  local properties = { tabOrder = paging and (numStrips + 2) or 0, y = y }
   if border then
     properties.frameborder = border.id
     properties.x           = Helper.standardContainerOffset
@@ -528,22 +759,15 @@ function panel.createInfoFrame()
   local contentY = panel.createTitleBar(menu.infoFrame, border):getFullHeight()
 
   -- The strips share one line, so the data table clears the height of one rather than the sum.
+  -- A panel coming back up shows the tab it is on, wherever the window was left standing.
   carryTabSelection()
+  ensureTabInView = ensureTabInView or reopened
   local paging = eic.pagingOn()
   if not paging then
     tabs.pager = nil
   end
 
-  local stripX = 0
-  local strips = {}
-  local buttonWidth = tabButtonWidth(menu.infoFrame)
-  for strip = 1, eic.NUMSTRIPS do
-    local tabTable = panel.createTabBar(menu.infoFrame, border, strip, buttonWidth, stripX, contentY)
-    if tabTable then
-      stripX = stripX + tabTable.properties.width + Helper.borderSize
-      strips[#strips + 1] = tabTable
-    end
-  end
+  local strips = panel.createTabBars(menu.infoFrame, border, contentY)
 
   local lineHeight = (#strips > 0) and strips[1]:getFullHeight() or 0
   if lineHeight > 0 then
@@ -552,7 +776,7 @@ function panel.createInfoFrame()
 
   -- The view name and the page control share the line right above the list, so the list's
   -- window is what is left under a row that is already standing at its full height.
-  local titleTable, titleRow = panel.createViewTitle(menu.infoFrame, border, contentY, paging)
+  local titleTable, titleRow = panel.createViewTitle(menu.infoFrame, border, contentY, paging, #strips)
   contentY = contentY + titleTable:getFullHeight()
 
   ftable.properties.y = contentY

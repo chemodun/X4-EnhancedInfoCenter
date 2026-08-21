@@ -446,32 +446,33 @@ local function scopedName(scope, name)
   return string.format(ReadText(eic.PAGE, 203), scope, name)
 end
 
--- One entry per tab cell, in strip order, spacers separating the groups.
--- scope narrows data.collect to one section, filter names a predicate in eic_data.ROW_FILTERS,
--- strip picks which of the two tab tables draws the cell.
+-- One entry per tab cell, in draw order, spacers separating the groups. The strip is drawn
+-- from this list alone: how many cells are on screen and how they are cut into tables follows
+-- from the frame's width at build time.
+-- scope narrows data.collect to one section, filter names a predicate in eic_data.ROW_FILTERS.
 eic.VIEWS = {
-  { strip = 1, category = "overview",    name = NAME_OVERVIEW,                                   icon = eic.icons.overview,    source = "property", columns = PROPERTY_COLUMNS },
-  { strip = 1, category = "crew",        name = NAME_CREW,                                       icon = eic.icons.crew,        source = "property", columns = CREW_COLUMNS },
-  { strip = 1, category = "trade",       name = NAME_TRADE,                                      icon = eic.icons.trade,       source = "property", columns = TRADE_COLUMNS,       filter = "tradeCargo" },
-  { strip = 1, spacer = true },
-  { strip = 1, category = "stOverview",  name = scopedName(ReadText(1001, 4), NAME_OVERVIEW),    icon = eic.icons.stOverview,  source = "property", columns = PROPERTY_COLUMNS,    scope = "stations" },
-  { strip = 1, category = "stCrew",      name = scopedName(ReadText(1001, 4), NAME_CREW),        icon = eic.icons.stCrew,      source = "property", columns = CREW_COLUMNS,        scope = "stations" },
-  { strip = 1, category = "stTrade",     name = scopedName(ReadText(1001, 4), NAME_TRADE),       icon = eic.icons.stTrade,     source = "property", columns = TRADE_COLUMNS,       scope = "stations", filter = "tradeCargo" },
-  { strip = 1, spacer = true },
-  { strip = 1, category = "flOverview",  name = scopedName(ReadText(1001, 8326), NAME_OVERVIEW), icon = eic.icons.flOverview,  source = "property", columns = PROPERTY_COLUMNS,    scope = "fleets" },
-  { strip = 1, category = "flCrew",      name = scopedName(ReadText(1001, 8326), NAME_CREW),     icon = eic.icons.flCrew,      source = "property", columns = CREW_COLUMNS,        scope = "fleets" },
-  { strip = 1, category = "flTrade",     name = scopedName(ReadText(1001, 8326), NAME_TRADE),    icon = eic.icons.flTrade,     source = "property", columns = FLEET_TRADE_COLUMNS, scope = "fleets",   filter = "tradeCargo" },
-  { strip = 1, spacer = true },
-  { strip = 2, category = "unassigned",  name = ReadText(1001, 8327),                            icon = eic.icons.unassigned,  source = "property", columns = PROPERTY_COLUMNS,    scope = "unassigned" },
-  { strip = 2, spacer = true },
-  { strip = 2, category = "shOverview",  name = scopedName(ReadText(1001, 6), NAME_OVERVIEW),    icon = eic.icons.shOverview,  source = "ships",    columns = SHIP_COLUMNS },
-  { strip = 2, category = "shCrew",      name = scopedName(ReadText(1001, 6), NAME_CREW),        icon = eic.icons.shCrew,      source = "ships",    columns = SHIP_CREW_COLUMNS },
-  { strip = 2, category = "shTrade",     name = scopedName(ReadText(1001, 6), NAME_TRADE),       icon = eic.icons.shTrade,     source = "ships",    columns = SHIP_TRADE_COLUMNS,  filter = "tradeCargo" },
-  { strip = 2, category = "damaged",     name = ReadText(1001, 1501),                            icon = eic.icons.damaged,     source = "ships",    columns = SHIP_COLUMNS,        filter = "damaged" },
-  { strip = 2, category = "signal",      name = ReadText(1041, 111),                             icon = eic.icons.signal,      source = "ships",    columns = SIGNAL_COLUMNS,      filter = "signal" },
-  { strip = 2, category = "failed",      name = ReadText(1001, 11621),                           icon = eic.icons.failed,      source = "ships",    columns = FAILED_COLUMNS,      filter = "failed" },
-  { strip = 2, spacer = true },
-  { strip = 2, category = "deployables", name = ReadText(1001, 1332),                            icon = eic.icons.deployables, source = "property", columns = DEPLOYABLE_COLUMNS,  scope = "deployables" },
+  { category = "overview",    name = NAME_OVERVIEW,                                   icon = eic.icons.overview,    source = "property", columns = PROPERTY_COLUMNS },
+  { category = "crew",        name = NAME_CREW,                                       icon = eic.icons.crew,        source = "property", columns = CREW_COLUMNS },
+  { category = "trade",       name = NAME_TRADE,                                      icon = eic.icons.trade,       source = "property", columns = TRADE_COLUMNS,       filter = "tradeCargo" },
+  { spacer = true },
+  { category = "stOverview",  name = scopedName(ReadText(1001, 4), NAME_OVERVIEW),    icon = eic.icons.stOverview,  source = "property", columns = PROPERTY_COLUMNS,    scope = "stations" },
+  { category = "stCrew",      name = scopedName(ReadText(1001, 4), NAME_CREW),        icon = eic.icons.stCrew,      source = "property", columns = CREW_COLUMNS,        scope = "stations" },
+  { category = "stTrade",     name = scopedName(ReadText(1001, 4), NAME_TRADE),       icon = eic.icons.stTrade,     source = "property", columns = TRADE_COLUMNS,       scope = "stations", filter = "tradeCargo" },
+  { spacer = true },
+  { category = "flOverview",  name = scopedName(ReadText(1001, 8326), NAME_OVERVIEW), icon = eic.icons.flOverview,  source = "property", columns = PROPERTY_COLUMNS,    scope = "fleets" },
+  { category = "flCrew",      name = scopedName(ReadText(1001, 8326), NAME_CREW),     icon = eic.icons.flCrew,      source = "property", columns = CREW_COLUMNS,        scope = "fleets" },
+  { category = "flTrade",     name = scopedName(ReadText(1001, 8326), NAME_TRADE),    icon = eic.icons.flTrade,     source = "property", columns = FLEET_TRADE_COLUMNS, scope = "fleets",   filter = "tradeCargo" },
+  { spacer = true },
+  { category = "unassigned",  name = ReadText(1001, 8327),                            icon = eic.icons.unassigned,  source = "property", columns = PROPERTY_COLUMNS,    scope = "unassigned" },
+  { spacer = true },
+  { category = "shOverview",  name = scopedName(ReadText(1001, 6), NAME_OVERVIEW),    icon = eic.icons.shOverview,  source = "ships",    columns = SHIP_COLUMNS },
+  { category = "shCrew",      name = scopedName(ReadText(1001, 6), NAME_CREW),        icon = eic.icons.shCrew,      source = "ships",    columns = SHIP_CREW_COLUMNS },
+  { category = "shTrade",     name = scopedName(ReadText(1001, 6), NAME_TRADE),       icon = eic.icons.shTrade,     source = "ships",    columns = SHIP_TRADE_COLUMNS,  filter = "tradeCargo" },
+  { category = "damaged",     name = ReadText(1001, 1501),                            icon = eic.icons.damaged,     source = "ships",    columns = SHIP_COLUMNS,        filter = "damaged" },
+  { category = "signal",      name = ReadText(1041, 111),                             icon = eic.icons.signal,      source = "ships",    columns = SIGNAL_COLUMNS,      filter = "signal" },
+  { category = "failed",      name = ReadText(1001, 11621),                           icon = eic.icons.failed,      source = "ships",    columns = FAILED_COLUMNS,      filter = "failed" },
+  { spacer = true },
+  { category = "deployables", name = ReadText(1001, 1332),                            icon = eic.icons.deployables, source = "property", columns = DEPLOYABLE_COLUMNS,  scope = "deployables" },
 }
 
 --- The tab strip as a dropdown list. A dropdown option's icon field draws nothing, so the
@@ -559,42 +560,10 @@ eic.OPTION_SECTIONS = {
   },
 }
 
--- Derived, so moving a cell between strips needs no second edit.
-eic.NUMSTRIPS = 0
-for _, view in ipairs(eic.VIEWS) do
-  eic.NUMSTRIPS = math.max(eic.NUMSTRIPS, view.strip)
-end
-
 function eic.viewIndex(category)
   for i, view in ipairs(eic.VIEWS) do
     if view.category == category then
       return i
-    end
-  end
-end
-
-function eic.stripEntries(strip)
-  local entries = {}
-  for _, view in ipairs(eic.VIEWS) do
-    if view.strip == strip then
-      entries[#entries + 1] = view
-    end
-  end
-  return entries
-end
-
---- Column 1 of the first strip is the scroll hint; later strips indent by the same width instead.
-function eic.stripFirstColumn(strip)
-  return (strip == 1) and 2 or 1
-end
-
-function eic.stripPosition(category)
-  for strip = 1, eic.NUMSTRIPS do
-    local first = eic.stripFirstColumn(strip)
-    for i, view in ipairs(eic.stripEntries(strip)) do
-      if view.category == category then
-        return strip, first + i - 1
-      end
     end
   end
 end
