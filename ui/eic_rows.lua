@@ -474,12 +474,12 @@ local function createDockedSection(rowGroup, layout, instance, component, iterat
   if extended then
     data.sortEntries(instance, dockedShips)
     for i, docked in ipairs(dockedShips) do
-      createObjectRow(rowGroup, layout, instance, docked.component, iteration + 2, location, i)
+      createObjectRow(rowGroup, layout, instance, docked.component, iteration + 2, location, i, true)
     end
   end
 end
 
-createObjectRow = function(rowGroup, layout, instance, component, iteration, commanderLocation, index)
+createObjectRow = function(rowGroup, layout, instance, component, iteration, commanderLocation, index, isDocked)
   local menu          = eic.menu
   local visible, info = flt.visible(instance, layout.view, component)
   if not visible then
@@ -489,7 +489,9 @@ createObjectRow = function(rowGroup, layout, instance, component, iteration, com
   local key          = tostring(component)
   local subordinates = menu.infoTableData[instance].subordinates[key] or {}
   local dockedShips  = menu.infoTableData[instance].dockedships[key] or {}
-  local hasChildren  = flt.hasChildren(key, subordinates, dockedShips)
+  -- A ship in a dock block stands for what is sitting in that dock; its own subordinates are
+  -- listed where it commands them, not here.
+  local hasChildren  = flt.hasChildren(key, subordinates, dockedShips, isDocked)
 
   if (not menu.isPropertyExtended(key)) and (menu.isCommander(info.id64, 0) or menu.isDockContext(info.id64)) then
     menu.extendedproperty[key] = true
@@ -530,7 +532,7 @@ createObjectRow = function(rowGroup, layout, instance, component, iteration, com
   if extended then
     local location = GetComponentData(component, "sectorid") or commanderLocation
 
-    if subordinates.hasRendered and flt.subordinatesShown(key) then
+    if (not isDocked) and subordinates.hasRendered and flt.subordinatesShown(key) then
       -- A fleet row names the fleet, so its own ship repeats below it, marked with a star. A
       -- commanded ship expands under its own row and would only duplicate it.
       if ctx.kind == "wing" then

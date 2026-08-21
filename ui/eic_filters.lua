@@ -326,11 +326,13 @@ function filters.visible(instance, view, component)
 end
 
 --- Whether a row still has anything to unfold, which is what puts an expand button on it.
-function filters.hasChildren(key, subordinates, dockedShips)
+--- `dockedOnly` is a row in a dock block, which never unfolds its subordinates.
+function filters.hasChildren(key, subordinates, dockedShips, dockedOnly)
   if not scan.active then
-    return (subordinates.hasRendered or (#dockedShips > 0)) and true or false
+    return (((not dockedOnly) and subordinates.hasRendered) or (#dockedShips > 0)) and true or false
   end
-  return ((scan.subCount[key] or 0) + (scan.dockCount[key] or 0)) > 0
+  local subCount = dockedOnly and 0 or (scan.subCount[key] or 0)
+  return (subCount + (scan.dockCount[key] or 0)) > 0
 end
 
 function filters.subordinatesShown(key)
