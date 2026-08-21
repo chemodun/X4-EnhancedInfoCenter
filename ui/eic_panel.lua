@@ -436,7 +436,7 @@ function panel.createPager(frame, border, x, y)
   arrow(2, "widget_arrow_left_01", page > 1, page - 1)
   pageEditBox = row[3]:createEditBox({
     description = ReadText(eic.PAGE, 315), scaling = false, height = height,
-  }):setText(pageText(), { halign = "center", fontsize = eic.fontSize })
+  }):setText(pageText(), { halign = "center", fontsize = eic.fontSize, scaling = true })
   row[3].handlers.onEditBoxActivated   = pageEditActivated
   row[3].handlers.onEditBoxDeactivated = pageEditDeactivated
   arrow(4, "widget_arrow_right_01", page < count, page + 1)
