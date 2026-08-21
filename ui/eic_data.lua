@@ -216,6 +216,8 @@ function data.getOrderText(component)
 
   local menu = eic.menu
   local orderText, actionText = "", ""
+  -- The unfilled command behind the order text, which is what the order filter groups by.
+  local orderCommand
 
   -- Foreign ships docked at a player station keep their orders to themselves.
   if not GetComponentData(component, "isplayerowned") then
@@ -229,6 +231,7 @@ function data.getOrderText(component)
   else
     local command, commandParam, commandAction, commandActionParam =
         GetComponentData(entity, "aicommand", "aicommandparam", "aicommandaction", "aicommandactionparam")
+    orderCommand = command
 
     local function paramText(param)
       if IsComponentClass(param, "ship") or IsComponentClass(param, "station") or IsComponentClass(param, "sector") then
@@ -252,8 +255,22 @@ function data.getOrderText(component)
     end
   end
 
-  data.orderInfo[key] = { order = orderText, action = actionText }
+  data.orderInfo[key] = { order = orderText, action = actionText, command = orderCommand }
   return orderText, actionText
+end
+
+--- The kind of order alone - the command text with its parameter left out - so a filter list
+--- holds one entry per kind rather than one per destination. nil where there is no order.
+function data.getOrderKind(component)
+  data.getOrderText(component)
+  local command = (data.orderInfo[tostring(component)] or {}).command
+  if (command == nil) or (command == "") then
+    return nil
+  end
+
+  local text = command:gsub("%%s", ""):gsub("%s+", " ")
+  text = text:match("^%s*(.-)%s*$")
+  return command, (text ~= "") and text or command
 end
 
 function data.passesFilter(info)
@@ -714,7 +731,8 @@ function data.getTradeWare(info)
           local value = eic.menu.getParamValue(params[1].type, params[1].value)
           local tradeData = value and GetTradeData(ConvertStringToLuaID(value))
           if tradeData and tradeData.ware then
-            info.tradeWare = { amount = tradeData.amount, name = GetWareData(tradeData.ware, "name") }
+            info.tradeWare = { ware = tradeData.ware, amount = tradeData.amount,
+              name = GetWareData(tradeData.ware, "name") }
           end
         end
         break

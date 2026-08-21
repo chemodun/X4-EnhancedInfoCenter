@@ -23,7 +23,6 @@
             <t id="301">Uzay giysisi</t>
             <t id="302">Kilitli kutular</t>
             <t id="303">Görünüm</t>
-            <t id="304">Sıralama satırı</t>
             <t id="305">Değişen satır rengi</t>
             <t id="306">Panel genişliği</t>
             <t id="307">Kargosu ve ticareti olmayan satırları gizle</t>
@@ -39,6 +38,15 @@
 
             <!-- page control -->
             <t id="315">Sayfa</t>
+
+            <!-- filtre satırı -->
+            <t id="401">Herhangi bir sektör</t>
+            <t id="402">Herhangi bir emir</t>
+            <t id="403">Herhangi bir mal</t>
+            <t id="404">Herhangi bir yetenek</t>
+            <t id="405">Herhangi bir mürettebat yeteneği</t>
+            <t id="406">Filtreleri sıfırla</t>
+            <t id="407">Ada veya kimlik koduna göre filtrele</t>
 
             <!-- status messages -->
             <t id="1000">Gösterilecek bir şey yok</t>

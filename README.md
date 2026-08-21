@@ -51,7 +51,7 @@ The panel has a title, one or two rows of tab icons and the list itself. Click a
 - **Damaged**, **Wait for Signal**, **Failed Orders** - that same flat list under a filter: hull below full, an order waiting on the proceed signal, and an order that has failed, the last one showing what failed and the message it failed with.
 - **Deployables** - satellites, mines, navigation beacons, resource probes, laser towers and lockboxes. Objects that share a name are collapsed into one row carrying that name and, in the hull column, how many there are; expand it to see them individually.
 
-The columns follow the tab: **Overview** shows the current order, the current activity and the hull bar, **Crew** replaces the hull with the manager or pilot skill and the combined crew skill, and **Trade & Cargo** replaces both with the cargo hold, the ware being traded and, on a station row, its account. A station or a fleet row has no order of its own, so it fills those columns with the icons of the ships under it instead.
+The columns follow the tab: **Overview** shows the current order, the current activity and the hull bar, **Crew** replaces the hull with the manager or pilot skill and the combined crew skill, and **Trade & Cargo** replaces both with the ware being traded, on a station row its account, and the cargo hold at the row end. A station or a fleet row has no order of its own, so it fills those columns with the icons of the ships under it instead.
 
 ### Sorting and expanding
 
@@ -76,7 +76,7 @@ Pick **Info Center Options** from the map's right sidebar. The options apply imm
 - **Ship Size** - `XL`, `L`, `M`, `S` and `Spacesuit`, filtering every list by hull size.
 - **Ship Roles** - `Fight`, `Trade`, `Mine`, `Build`, `Auxiliary`, `Salvage`, `Dismantling` and `Racing`, filtering by what a ship is fitted out for.
 - **Deployables** - `Laser Towers`, `Mines`, `Navigation Beacons`, `Resource Probes`, `Satellites` and `Lockboxes`, filtering the Deployables tab.
-- **Display** - `Sorter row` switches the header row off, `Paging` cuts every list into pages, `Expand/collapse scope` sets what the sorter row's expand button acts on, `Panel width` is the share of the screen the panel takes, and `Opening tab` is the tab each new session starts on.
+- **Display** - `Paging` cuts every list into pages, `Expand/collapse scope` sets what the sorter row's expand button acts on, `Panel width` is the share of the screen the panel takes, and `Opening tab` is the tab each new session starts on.
 - **Alternating row colour** - one flag each for `Stations`, `Fleets`, `Ships` and `Deployables`, so a long section can be striped while a short one is not.
 - **Trade & Cargo** - `Hide rows with no cargo or trade` drops everything that is neither carrying nor trading from the three trade tabs.
 

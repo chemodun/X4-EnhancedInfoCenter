@@ -7,6 +7,7 @@
         <dependency name="kuertee_ui_extensions" />
         <file name="ui/eic_config.lua" />
         <file name="ui/eic_data.lua" />
+        <file name="ui/eic_filters.lua" />
         <file name="ui/eic_rows.lua" />
         <file name="ui/eic_panel.lua" />
         <savedvariable name="EIC_Options" storage="userdata" />

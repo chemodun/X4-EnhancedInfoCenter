@@ -23,7 +23,6 @@
             <t id="301">Combinaison spatiale</t>
             <t id="302">Coffres</t>
             <t id="303">Affichage</t>
-            <t id="304">Ligne de tri</t>
             <t id="305">Couleur alternée des lignes</t>
             <t id="306">Largeur du panneau</t>
             <t id="307">Masquer les lignes sans cargaison ni commerce</t>
@@ -39,6 +38,15 @@
 
             <!-- page control -->
             <t id="315">Page</t>
+
+            <!-- ligne de filtres -->
+            <t id="401">Tout secteur</t>
+            <t id="402">Tout ordre</t>
+            <t id="403">Toute marchandise</t>
+            <t id="404">Toute compétence</t>
+            <t id="405">Toute compétence d'équipage</t>
+            <t id="406">Réinitialiser les filtres</t>
+            <t id="407">Filtrer par nom ou code d'identification</t>
 
             <!-- status messages -->
             <t id="1000">Rien à afficher</t>

@@ -10,6 +10,7 @@ local C   = ffi.C
 local eic  = require("extensions.enhanced_info_center.ui.eic_config")
 ---@diagnostic disable-next-line: unresolved-require
 local data = require("extensions.enhanced_info_center.ui.eic_data")
+local flt  = require("extensions.enhanced_info_center.ui.eic_filters")
 
 local rows = {}
 
@@ -99,6 +100,16 @@ function rows.resolve(view)
     entry.weight = math.floor(entry.weight * WEIGHT_SCALE + 0.5)
   end
 
+  -- Settled once the surplus has moved every `first`: a merge column hands its columns to the
+  -- entry after it, which draws over both everywhere the filter row does not.
+  for i, entry in ipairs(layout.entries) do
+    local following = layout.entries[i + 1]
+    if entry.def.merge and following then
+      following.mergedFirst = entry.first
+      following.mergedSpan  = following.span + (following.first - entry.first)
+    end
+  end
+
   layout.total = used
   return layout
 end
@@ -139,8 +150,8 @@ local function renderColumns(row, layout, ctx)
     local step  = i + 1
 
     if applies(def, ctx) then
-      local first = entry.first
-      local span  = entry.span
+      local first = entry.mergedFirst or entry.first
+      local span  = entry.mergedSpan or entry.span
       if def.growBack and skipped then
         span  = span + (first - skipped)
         first = skipped
@@ -341,13 +352,14 @@ local function createSubordinateSection(rowGroup, layout, instance, component, i
   end
 
   for group = 1, 10 do
-    if groups[group] then
+    if groups[group] and flt.groupShown(key, group) then
       local groupKey  = key .. group
       local extended  = menu.isSubordinateExtended(key, group)
       if (not extended) and menu.isCommander(component64, 0, group) then
         menu.extendedsubordinates[groupKey] = true
         extended = true
       end
+      extended = extended or flt.forceOpen("groups", groupKey)
 
       local row = rowGroup:addRow({ "subordinates" .. groupKey, component, group },
         { bgColor = Color["row_background_blue"] })
@@ -405,16 +417,19 @@ local function createDockedSection(rowGroup, layout, instance, component, iterat
   if (not menu.isDockedShipsExtended(key)) and menu.isDockContext(component64) then
     menu.extendeddockedships[key] = true
   end
-  local extended = menu.isDockedShipsExtended(key, isStation)
+  local extended = menu.isDockedShipsExtended(key, isStation) or flt.forceOpen("docked", key)
 
   local row = rowGroup:addRow({ "dockedships", component }, { bgColor = Color["row_background_blue"] })
   row[1]:createButton({}):setText(extended and "-" or "+", { halign = "center" })
   row[1].handlers.onClick = function() return menu.buttonExtendDockedShips(key, isStation) end
   row[2]:setColSpan(math.max(1, split - 2)):createText(string.rep("    ", iteration + 1) .. ReadText(1001, 3265))
 
+  -- The summary counts what the block lists, so a filtered dock does not head a short list
+  -- with the full tally.
   local playerShips = {}
   for _, docked in ipairs(dockedShips) do
-    if data.getObjectInfo(instance, docked.component).isPlayerOwned then
+    if data.getObjectInfo(instance, docked.component).isPlayerOwned
+        and ((not flt.active()) or flt.visible(instance, layout.view, docked.component)) then
       playerShips[#playerShips + 1] = docked
     end
   end
@@ -453,7 +468,7 @@ end
 
 createObjectRow = function(rowGroup, layout, instance, component, iteration, commanderLocation, index)
   local menu          = eic.menu
-  local visible, info = data.isRowVisible(instance, layout.view, component)
+  local visible, info = flt.visible(instance, layout.view, component)
   if not visible then
     return
   end
@@ -461,14 +476,14 @@ createObjectRow = function(rowGroup, layout, instance, component, iteration, com
   local key          = tostring(component)
   local subordinates = menu.infoTableData[instance].subordinates[key] or {}
   local dockedShips  = menu.infoTableData[instance].dockedships[key] or {}
-  local hasChildren  = (subordinates.hasRendered or (#dockedShips > 0)) and true or false
+  local hasChildren  = flt.hasChildren(key, subordinates, dockedShips)
 
   if (not menu.isPropertyExtended(key)) and (menu.isCommander(info.id64, 0) or menu.isDockContext(info.id64)) then
     menu.extendedproperty[key] = true
   end
 
   local ctx      = buildContext(instance, layout, component, iteration, index, info)
-  local extended = menu.isPropertyExtended(key)
+  local extended = menu.isPropertyExtended(key) or flt.forceOpen("property", key)
 
   if hasChildren then
     ctx.expand = {
@@ -502,7 +517,7 @@ createObjectRow = function(rowGroup, layout, instance, component, iteration, com
   if extended then
     local location = GetComponentData(component, "sectorid") or commanderLocation
 
-    if subordinates.hasRendered then
+    if subordinates.hasRendered and flt.subordinatesShown(key) then
       -- The commander repeats itself above its subordinates, marked with a star.
       if ctx.kind ~= "station" then
         local repeatCtx = {}
@@ -522,7 +537,7 @@ createObjectRow = function(rowGroup, layout, instance, component, iteration, com
       createSubordinateSection(rowGroup, layout, instance, component, iteration, location)
     end
 
-    if #dockedShips > 0 then
+    if (#dockedShips > 0) and flt.dockShown(key) then
       createDockedSection(rowGroup, layout, instance, component, iteration, location, ctx.kind == "station")
     end
   end
@@ -758,13 +773,10 @@ function rows.rowFullHeight(ftable, index)
   return height
 end
 
---- The first row a selection can land on; the title and the sorter row above it are fixed.
+--- The first row a selection can land on; the title, the filter row and the sorter row
+--- above it are fixed.
 function rows.firstDataRow()
-  local fixed = 1
-  if eic.getOption("sorterRow") then
-    fixed = fixed + 1
-  end
-  return fixed + 1
+  return 4
 end
 
 --- The view name heads the object list: a strip is narrower than the frame, so it would not centre there.
@@ -808,9 +820,10 @@ local function createSorterRow(ftable, layout, instance, sections)
   for _, entry in ipairs(layout.entries) do
     local def = entry.def
     if def.header then
-      local cell = row[entry.first]
-      if entry.span > 1 then
-        cell:setColSpan(entry.span)
+      local cell = row[entry.mergedFirst or entry.first]
+      local span = entry.mergedSpan or entry.span
+      if span > 1 then
+        cell:setColSpan(span)
       end
 
       if def.sort then
@@ -853,7 +866,7 @@ local function collectNodes(instance, layout, sections)
     else
       local nodes = {}
       for _, component in ipairs(section.items) do
-        if data.isRowVisible(instance, layout.view, component) then
+        if flt.visible(instance, layout.view, component) then
           nodes[#nodes + 1] = component
         end
       end
@@ -983,14 +996,15 @@ end
 function rows.fillInfoTable(ftable, layout, instance)
   local view = layout.view
 
-  -- Ahead of the fixed rows: the sorter row's expand button is built from what it collects.
+  -- Ahead of the fixed rows: the sorter row's expand button is built from what it collects,
+  -- and the filter row from the values the pass over those objects turns up.
   local sections = data.collect(instance, view)
+  flt.prepare(instance, layout, sections)
 
   -- The table's only fixed rows, and numfixedrows is the index of the last of them.
   createTabTitleRow(ftable, layout)
-  if eic.getOption("sorterRow") then
-    createSorterRow(ftable, layout, instance, sections)
-  end
+  flt.createRow(ftable, layout)
+  createSorterRow(ftable, layout, instance, sections)
 
   if #sections == 0 then
     local row = ftable:addRow(false, {})
@@ -1005,7 +1019,7 @@ function rows.fillInfoTable(ftable, layout, instance)
   for _, section in ipairs(sections) do
     if section.kind == "construction" then
       -- The build queue is the tail of the list, so it comes up under its last page.
-      if last >= total then
+      if (last >= total) and flt.showConstruction() then
         createConstructionSection(ftable, layout, section)
       end
     else

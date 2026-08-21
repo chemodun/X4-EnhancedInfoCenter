@@ -23,7 +23,6 @@
             <t id="301">Raumanzug</t>
             <t id="302">Schatztruhen</t>
             <t id="303">Anzeige</t>
-            <t id="304">Sortierzeile</t>
             <t id="305">Abwechselnde Zeilenfarbe</t>
             <t id="306">Breite des Panels</t>
             <t id="307">Zeilen ohne Fracht und Handel ausblenden</t>
@@ -39,6 +38,15 @@
 
             <!-- page control -->
             <t id="315">Seite</t>
+
+            <!-- Filterzeile -->
+            <t id="401">Beliebiger Sektor</t>
+            <t id="402">Beliebiger Befehl</t>
+            <t id="403">Beliebige Ware</t>
+            <t id="404">Beliebige Fähigkeit</t>
+            <t id="405">Beliebige Crew-Fähigkeit</t>
+            <t id="406">Filter zurücksetzen</t>
+            <t id="407">Nach Name oder ID-Code filtern</t>
 
             <!-- status messages -->
             <t id="1000">Nichts anzuzeigen</t>

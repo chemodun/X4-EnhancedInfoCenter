@@ -83,7 +83,6 @@ local LEGACY_OPTIONS = {
   infocenter_shiprecycling  = "roleRecycling",
   infocenter_shipracing     = "roleRacing",
 
-  infocenter_sorterrow      = "sorterRow",
   -- One legacy flag, three flags here: the value seeds all of them.
   infocenter_altrowcolor    = { "altRowStations", "altRowFleets", "altRowShips", "altRowDeployables" },
 }
@@ -112,7 +111,6 @@ local OPTION_DEFAULTS = {
   roleRecycling  = true,
   roleRacing     = true,
 
-  sorterRow         = true,
   paging            = false,
   expandScope       = "first",
   altRowStations    = true,
@@ -205,6 +203,17 @@ eic.COLUMNS = {
         cell:createText("\27[menu_star_04]", { halign = "center", color = Color["text_skills"] })
       end
     end,
+  },
+
+  -- Draws nothing ever: the column after it covers both on every row but the filter row,
+  -- which is what the column is for - a tab with no expand column still has somewhere to put
+  -- the reset button, in the cell the sectioned tabs keep their expand-all in.
+  lead = {
+    id      = "lead",
+    span    = 1,
+    fixed   = "row",
+    merge   = true,
+    applies = function() return false end,
   },
 
   name = {
@@ -319,7 +328,7 @@ eic.COLUMNS = {
     end,
   },
 
-  -- Only a ship trades; a station row leaves the space to the account cell, a wing row to cargo.
+  -- Only a ship trades; a station row leaves the space to the account cell, a wing row to neither.
   ware = {
     id      = "ware",
     span    = 1,
@@ -413,13 +422,16 @@ local TRADE_WIDE_WARE   = { "ware", span = 2 }
 
 local PROPERTY_COLUMNS   = { "expand", "name", "sector", "order", "action", "fleet", "hullBar" }
 local CREW_COLUMNS       = { "expand", "name", "sector", "order", "action", "fleet", "skill", "crewSkill" }
-local TRADE_COLUMNS      = { "expand", "name", "sector", "order", TRADE_ACTION, "cargo", "ware", "balance" }
-local FLEET_TRADE_COLUMNS = { "expand", "name", "sector", "order", TRADE_ACTION, "cargo", TRADE_WIDE_WARE }
-local SHIP_COLUMNS       = { "name", "sector", "order", "action", "hullBar" }
-local SHIP_CREW_COLUMNS  = { "name", "sector", "order", "action", "skill", "crewSkill" }
-local SHIP_TRADE_COLUMNS = { "name", "sector", "order", { "action", span = 3, weight = 0.8 }, "cargo", TRADE_WIDE_WARE }
-local SIGNAL_COLUMNS     = { "name", "sector", "order", "nextOrder", "hullBar" }
-local FAILED_COLUMNS     = { "name", "sector", "order", "failedOrder", "failureMessage" }
+local TRADE_COLUMNS      = { "expand", "name", "sector", "order", TRADE_ACTION, "ware", "balance", "cargo" }
+local FLEET_TRADE_COLUMNS = { "expand", "name", "sector", "order", TRADE_ACTION, TRADE_WIDE_WARE, "cargo" }
+-- The flat tabs open on a lead column instead of an expand one. It costs them nothing - the
+-- name cell covers it on every row - and it puts their reset button where the others keep it.
+-- With it the Ships Trade tab resolves to the same physical map as the Fleets one.
+local SHIP_COLUMNS       = { "lead", "name", "sector", "order", "action", "hullBar" }
+local SHIP_CREW_COLUMNS  = { "lead", "name", "sector", "order", "action", "skill", "crewSkill" }
+local SHIP_TRADE_COLUMNS = { "lead", "name", "sector", "order", TRADE_ACTION, TRADE_WIDE_WARE, "cargo" }
+local SIGNAL_COLUMNS     = { "lead", "name", "sector", "order", "nextOrder", "hullBar" }
+local FAILED_COLUMNS     = { "lead", "name", "sector", "order", "failedOrder", "failureMessage" }
 -- A deployable has no orders, no crew and no hold, so the tab states only what it has and
 -- lets name and sector take the room the other tabs spend on activity.
 local DEPLOYABLE_COLUMNS = { "expand", { "name", span = 4 }, { "sector", span = 4 }, "hullBar" }
@@ -513,8 +525,7 @@ eic.OPTION_SECTIONS = {
   },
   {
     caption = ReadText(eic.PAGE, 303),
-    { id = "sorterRow", name = ReadText(eic.PAGE, 304) },
-    { id = "paging",    name = ReadText(eic.PAGE, 314) },
+    { id = "paging", name = ReadText(eic.PAGE, 314) },
     {
       id      = "expandScope",
       name    = ReadText(eic.PAGE, 309),

@@ -23,7 +23,6 @@
             <t id="301">Traje espacial</t>
             <t id="302">Cofres</t>
             <t id="303">Visualización</t>
-            <t id="304">Fila de ordenación</t>
             <t id="305">Color de fila alterno</t>
             <t id="306">Anchura del panel</t>
             <t id="307">Ocultar filas sin carga ni comercio</t>
@@ -39,6 +38,15 @@
 
             <!-- page control -->
             <t id="315">Página</t>
+
+            <!-- fila de filtros -->
+            <t id="401">Cualquier sector</t>
+            <t id="402">Cualquier orden</t>
+            <t id="403">Cualquier mercancía</t>
+            <t id="404">Cualquier habilidad</t>
+            <t id="405">Cualquier habilidad de tripulación</t>
+            <t id="406">Restablecer filtros</t>
+            <t id="407">Filtrar por nombre o código de identificación</t>
 
             <!-- status messages -->
             <t id="1000">Nada que mostrar</t>
