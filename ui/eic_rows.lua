@@ -489,16 +489,20 @@ createObjectRow = function(rowGroup, layout, instance, component, iteration, com
   local key          = tostring(component)
   local subordinates = menu.infoTableData[instance].subordinates[key] or {}
   local dockedShips  = menu.infoTableData[instance].dockedships[key] or {}
-  -- A ship in a dock block stands for what is sitting in that dock; its own subordinates are
-  -- listed where it commands them, not here.
-  local hasChildren  = flt.hasChildren(key, subordinates, dockedShips, isDocked)
-
   if (not menu.isPropertyExtended(key)) and (menu.isCommander(info.id64, 0) or menu.isDockContext(info.id64)) then
     menu.extendedproperty[key] = true
   end
 
-  local ctx      = buildContext(instance, layout, component, iteration, index, info)
-  local extended = menu.isPropertyExtended(key) or flt.forceOpen("property", key)
+  local ctx = buildContext(instance, layout, component, iteration, index, info)
+
+  -- A fleet row carries the fleet's name, not the leader's, so a filter matching the leader
+  -- would stand on a row that shows nothing of what it matched: open it for its own row below.
+  local openForLeader = (ctx.kind == "wing") and subordinates.hasRendered and flt.matchedSelf(key)
+
+  -- A ship in a dock block stands for what is sitting in that dock; its own subordinates are
+  -- listed where it commands them, not here.
+  local hasChildren = flt.hasChildren(key, subordinates, dockedShips, isDocked) or openForLeader
+  local extended    = menu.isPropertyExtended(key) or flt.forceOpen("property", key) or openForLeader
 
   if hasChildren then
     ctx.expand = {
@@ -532,24 +536,25 @@ createObjectRow = function(rowGroup, layout, instance, component, iteration, com
   if extended then
     local location = GetComponentData(component, "sectorid") or commanderLocation
 
-    if (not isDocked) and subordinates.hasRendered and flt.subordinatesShown(key) then
-      -- A fleet row names the fleet, so its own ship repeats below it, marked with a star. A
-      -- commanded ship expands under its own row and would only duplicate it.
-      if ctx.kind == "wing" then
-        local repeatCtx = {}
-        for k, v in pairs(ctx) do repeatCtx[k] = v end
-        repeatCtx.kind              = "ship"
-        repeatCtx.isCommanderRepeat = true
-        repeatCtx.expand            = nil
-        if repeatCtx.orderText == "" then
-          repeatCtx.orderText, repeatCtx.actionText = data.getOrderText(component)
-        end
-
-        local commanderRow = rowGroup:addRow({ "property", component, nil, iteration },
-          { bgColor = Color["frame_background_semitransparent"], multiSelected = menu.isSelectedComponent(component) })
-        renderColumns(commanderRow, layout, repeatCtx)
+    -- A fleet row names the fleet, so its own ship repeats below it, marked with a star. A
+    -- commanded ship expands under its own row and would only duplicate it. The repeat stands
+    -- outside the subordinate gate: it is the leader itself, not one of the rows a filter cuts.
+    if (ctx.kind == "wing") and subordinates.hasRendered then
+      local repeatCtx = {}
+      for k, v in pairs(ctx) do repeatCtx[k] = v end
+      repeatCtx.kind              = "ship"
+      repeatCtx.isCommanderRepeat = true
+      repeatCtx.expand            = nil
+      if repeatCtx.orderText == "" then
+        repeatCtx.orderText, repeatCtx.actionText = data.getOrderText(component)
       end
 
+      local commanderRow = rowGroup:addRow({ "property", component, nil, iteration },
+        { bgColor = Color["frame_background_semitransparent"], multiSelected = menu.isSelectedComponent(component) })
+      renderColumns(commanderRow, layout, repeatCtx)
+    end
+
+    if (not isDocked) and subordinates.hasRendered and flt.subordinatesShown(key) then
       createSubordinateSection(rowGroup, layout, instance, component, iteration, location)
     end
 

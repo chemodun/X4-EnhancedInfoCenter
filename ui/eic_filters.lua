@@ -116,7 +116,7 @@ end
 -- What one build of the list knows about its filters: which controls the tab shows, what each
 -- of their lists may offer, and which rows survive. Rebuilt by prepare, read by everything else.
 local scan = { active = false, controls = {}, options = {}, texts = {}, colors = {},
-  subtree = {}, subCount = {}, dockCount = {}, groupCount = {},
+  subtree = {}, matched = {}, subCount = {}, dockCount = {}, groupCount = {},
   open = { property = {}, groups = {}, docked = {} } }
 
 --- True while nothing is set: the whole pass then only fills the lists the controls offer.
@@ -204,6 +204,7 @@ local function walk(instance, view, component)
     end
   end
   local matched = (misses == 0)
+  scan.matched[key] = matched
 
   local infoTableData = eic.menu.infoTableData[instance]
   local subordinates  = infoTableData.subordinates[key] or {}
@@ -282,7 +283,7 @@ end
 --- fills the lists the controls offer and settles which rows the filters leave standing.
 function filters.prepare(instance, layout, sections)
   scan = { active = false, controls = {}, options = {}, texts = {}, colors = {},
-    subtree = {}, subCount = {}, dockCount = {}, groupCount = {},
+    subtree = {}, matched = {}, subCount = {}, dockCount = {}, groupCount = {},
     open = { property = {}, groups = {}, docked = {} } }
 
   for _, control in ipairs(FILTERS) do
@@ -323,6 +324,11 @@ function filters.visible(instance, view, component)
     visible = scan.subtree[tostring(component)] and true or false
   end
   return visible, info
+end
+
+--- Whether the node passed the filters on its own values rather than on a child's.
+function filters.matchedSelf(key)
+  return scan.active and scan.matched[key] and true or false
 end
 
 --- Whether a row still has anything to unfold, which is what puts an expand button on it.
