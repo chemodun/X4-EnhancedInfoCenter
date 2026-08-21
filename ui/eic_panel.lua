@@ -833,13 +833,19 @@ end
 local function createSliderOption(ftable, option)
   local menu  = eic.menu
   local scale = option.scale
+  -- A cap is a live geometry limit; a stored value above it comes down with the slider's own ceiling.
+  local top   = scale.cap and scale.cap() or scale.max
   local value = tonumber(eic.getOption(option.id)) or scale.min
-  local row   = ftable:addRow(true, {})
+  local start = math.max(scale.min, math.min(top, value))
+  if start ~= value then
+    eic.setOption(option.id, start)
+  end
+  local row = ftable:addRow(true, {})
 
   row[1]:setColSpan(2):createSliderCell({
     height = eic.rowHeight,
-    min = scale.min, max = scale.max, step = scale.step, suffix = scale.suffix,
-    start = math.max(scale.min, math.min(scale.max, value)),
+    min = scale.min, max = top, step = scale.step, suffix = scale.suffix,
+    start = start,
     hideMaxValue = true,
   }):setText(option.name, { fontsize = eic.fontSize })
 

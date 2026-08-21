@@ -165,9 +165,13 @@ function eic.setOption(id, value)
 end
 
 -- The right-hand info panel's left edge is the hard stop for the wide frame.
+local function frameMaxWidth(menu, mapConfig)
+  return Helper.viewWidth - 2 * menu.infoTableOffsetX - menu.infoTableWidth - mapConfig.contextBorder
+end
+
 function eic.frameWidth(menu, mapConfig)
   local minWidth = menu.infoTableWidth
-  local maxWidth = Helper.viewWidth - 2 * menu.infoTableOffsetX - menu.infoTableWidth - mapConfig.contextBorder
+  local maxWidth = frameMaxWidth(menu, mapConfig)
   local percent  = tonumber(eic.getOption("widthPercent")) or eic.widthPercent
   local width    = math.floor(percent / 100 * Helper.viewWidth)
 
@@ -175,6 +179,16 @@ function eic.frameWidth(menu, mapConfig)
     return minWidth
   end
   return math.max(minWidth, math.min(maxWidth, width))
+end
+
+-- The share that stop leaves free: the width slider's own ceiling, so it cannot offer a
+-- percentage frameWidth would only clamp away. Geometry is unknown until the map menu is up.
+function eic.widthPercentCap()
+  if not (eic.menu and eic.mapConfig) then
+    return eic.widthPercentMax
+  end
+  local percent = math.floor(frameMaxWidth(eic.menu, eic.mapConfig) / Helper.viewWidth * 100)
+  return math.max(eic.widthPercentMin, math.min(eic.widthPercentMax, percent))
 end
 
 -- Logical columns.
@@ -538,7 +552,7 @@ eic.OPTION_SECTIONS = {
     {
       id    = "widthPercent",
       name  = ReadText(eic.PAGE, 306),
-      scale = { min = eic.widthPercentMin, max = eic.widthPercentMax, step = 1, suffix = "%" },
+      scale = { min = eic.widthPercentMin, max = eic.widthPercentMax, cap = eic.widthPercentCap, step = 1, suffix = "%" },
     },
     {
       id      = "startView",
