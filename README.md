@@ -2,7 +2,7 @@
 
 A wide, tabbed property panel on the map's left sidebar. Your stations, fleets and ships in the vanilla Property Owned style, each tab showing its own set of columns.
 
-It is written from scratch, inspired by the original `Info Center` by [Forleyor](https://www.nexusmods.com/profile/Forleyor?gameId=2659).
+It is written from scratch, inspired by the original `Info Center`.
 
 ## Features
 
@@ -94,7 +94,7 @@ Pick **Info Center Options** from the map's right sidebar. The options apply imm
 ## Acknowledgements
 
 - [EGOSOFT](https://www.egosoft.com) - for the X series.
-- [Forleyor](https://www.nexusmods.com/profile/Forleyor?gameId=2659) - for the original Info Center, which this panel takes its purpose from.
+- To the author for the original Info Center.
 - [kuertee](https://www.nexusmods.com/profile/kuertee?gameId=2659) - for the UI Extensions hooks the panel plugs into.
 - [SirNukes](https://www.nexusmods.com/profile/sirnukes?gameId=2659) - for the Mod Support APIs that power the UI hooks.
 
