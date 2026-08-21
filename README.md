@@ -14,6 +14,7 @@ It is written from scratch, inspired by the original `Info Center`.
 - **Sortable columns** - the sorter row sorts by name, sector, order, hull, skill, crew skill or cargo, and the `Cargo` button walks total capacity and used capacity.
 - **A right bar options panel** - ship sizes, ship roles, deployable types, display options, alternating row colour and panel width, in the map's own right sidebar, so the map and the list stay visible while you change them.
 - **Deployables at last** - satellites, mines, navigation beacons, resource probes, laser towers and lockboxes get a tab of their own, with identical names collapsed into one countable row.
+- **Paged by default, for speed** - the list is cut into pages that fit the panel, and only the page you are on is built, so a large property costs no more to open than a small one. Switch paging off in the options for one long scrolling list instead.
 - **Follows your UI settings** - the panel takes its row height and font size from the `UI Extensions and HUD` map settings, like every other panel that mod governs.
 
 ## Requirements
@@ -61,7 +62,7 @@ The columns follow the tab: **Overview** shows the current order, the current ac
 
 ### Paging
 
-- `Paging` in the options cuts every tab's list into pages and puts the vanilla page control - first, previous, the page number, next, last - at the right end of the tab strip, on the same line as the tab icons. It is off by default; with it off the list stays one scrolling whole.
+- `Paging` cuts every tab's list into pages and puts the vanilla page control - first, previous, the page number, next, last - on the tab title's line, at the right end of the panel. **It is on by default, and it is the faster of the two modes**: a page is built and drawn on its own, so the panel only ever lays out a windowful of rows instead of every ship, station and deployable you own. With a large property the difference is the panel opening and refreshing at once rather than after a pause. Turn it off and the list goes back to one scrolling whole - every row built on every refresh.
 - A page holds as many top level rows as the panel shows with every one of them collapsed, whether they are collapsed or not: rows you open push the rest of the page past the lower edge, where the list scrolls down to them the way it always did.
 - Each tab remembers the page it stands on, and the box between the arrows takes a page number typed straight into it. On the tabs that list the build queue, the queue follows the last page.
 
@@ -76,7 +77,7 @@ Pick **Info Center Options** from the map's right sidebar. The options apply imm
 - **Ship Size** - `XL`, `L`, `M`, `S` and `Spacesuit`, filtering every list by hull size.
 - **Ship Roles** - `Fight`, `Trade`, `Mine`, `Build`, `Auxiliary`, `Salvage`, `Dismantling` and `Racing`, filtering by what a ship is fitted out for.
 - **Deployables** - `Laser Towers`, `Mines`, `Navigation Beacons`, `Resource Probes`, `Satellites` and `Lockboxes`, filtering the Deployables tab.
-- **Display** - `Paging` cuts every list into pages, `Expand/collapse scope` sets what the sorter row's expand button acts on, `Panel width` is the share of the screen the panel takes, and `Opening tab` is the tab each new session starts on.
+- **Display** - `Paging` cuts every list into pages and is on by default, for the speed it buys on a large property, `Expand/collapse scope` sets what the sorter row's expand button acts on, `Panel width` is the share of the screen the panel takes, and `Opening tab` is the tab each new session starts on.
 - **Alternating row colour** - one flag each for `Stations`, `Fleets`, `Ships` and `Deployables`, so a long section can be striped while a short one is not.
 - **Trade & Cargo** - `Hide rows with no cargo or trade` drops everything that is neither carrying nor trading from the three trade tabs.
 

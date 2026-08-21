@@ -111,7 +111,7 @@ local OPTION_DEFAULTS = {
   roleRecycling  = true,
   roleRacing     = true,
 
-  paging            = false,
+  paging            = true,
   expandScope       = "first",
   altRowStations    = true,
   altRowFleets      = true,
