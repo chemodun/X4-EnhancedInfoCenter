@@ -991,7 +991,13 @@ local function nodeComponents(sections)
   for _, section in ipairs(sections) do
     for _, node in ipairs(section.nodes or {}) do
       index = index + 1
-      components[index] = (section.kind == "deployables") and node.component or node
+      -- Spelt out rather than folded into an `and`/`or`: a group node's `component` is nil,
+      -- which would fall through to the node table itself.
+      if section.kind == "deployables" then
+        components[index] = node.component
+      else
+        components[index] = node
+      end
     end
   end
   return components

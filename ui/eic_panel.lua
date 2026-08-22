@@ -946,7 +946,10 @@ local function rowComponentKey(rowData)
   if type(rowData) ~= "table" then
     return nil
   end
-  local component = (rowData[1] == "construction") and rowData[3].component or rowData[2]
+  local component = rowData[2]
+  if rowData[1] == "construction" then
+    component = rowData[3].component
+  end
   if (component == nil) or (component == 0) then
     return nil
   end
