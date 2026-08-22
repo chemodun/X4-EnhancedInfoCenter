@@ -489,18 +489,6 @@ local builtTable = nil -- that table, so its live cursor can be read back off it
 local selection  = nil -- the map's single selection the list last scrolled to
 local pageTurned = false -- the outgoing cursor belongs to the page left behind
 
---- The one component selected on the map, or nil when it holds none or several.
-local function singleSelection()
-  local found
-  for key in pairs(eic.menu.selectedcomponents or {}) do
-    if found then
-      return nil
-    end
-    found = key
-  end
-  return found
-end
-
 --- The outgoing table's live position, kept under the view that built it.
 local function carryViewState()
   local id = builtTable and builtTable.id
@@ -553,11 +541,18 @@ end
 --- is in the list; a tab click and the panel opening state a new view. Anything else is a plain
 --- refresh, which keeps the outgoing position so a rebuild never fights the wheel.
 local function applyViewState(ftable, reopened)
-  local menu    = eic.menu
+  local menu = eic.menu
+  -- A page the build turned itself to reach the selection loses the cursor the same way one
+  -- turned by hand does: it was taken on the page left behind.
+  if rows.pageFollowed then
+    views[eic.viewMode] = nil
+    pageTurned = true
+  end
+
   local state   = views[eic.viewMode] or {}
   local row     = math.min(menu.sethighlightborderrow or menu.setrow or state.row or rows.firstDataRow(), #ftable.rows)
   local top     = state.top
-  local current = singleSelection()
+  local current = eic.singleSelection()
 
   if reopened or pageTurned or (builtView ~= eic.viewMode) or (menu.setrow and (current ~= selection)) then
     top = visibleTopRow(ftable, top, row)
@@ -802,6 +797,7 @@ function panel.createInfoFrame()
   menu.settoprow = nil
   menu.setcol = nil
   menu.sethighlightborderrow = nil
+  rows.pageFollowed = false
 
   -- Vanilla cleared the panel's navigation column before this callback ran.
   if menu.playerinfotable then

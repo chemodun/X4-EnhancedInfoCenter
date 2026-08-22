@@ -12,7 +12,9 @@ local eic  = require("extensions.enhanced_info_center.ui.eic_config")
 local data = require("extensions.enhanced_info_center.ui.eic_data")
 local flt  = require("extensions.enhanced_info_center.ui.eic_filters")
 
-local rows = {}
+-- pageFollowed: set when a build turned the page itself to follow the map's selection, and
+-- cleared by the panel with the menu.set* fields it is built alongside.
+local rows = { pageFollowed = false }
 
 -- Encyclopedia entries the map records for what it has shown.
 local KNOWN_ITEM_CLASS = {
@@ -978,8 +980,79 @@ local function pageBounds(sections, total, budget, pitch, header, group)
   return bounds
 end
 
+-- The selection each tab's page was last steered by, so a page turned by hand stays where it
+-- was put until the map's selection actually moves.
+local followed = {}
+
+--- Every top-level node's component, indexed the way the page bounds count them. A deployables
+--- name group stands for its members rather than for an object and leaves its index empty.
+local function nodeComponents(sections)
+  local components, index = {}, 0
+  for _, section in ipairs(sections) do
+    for _, node in ipairs(section.nodes or {}) do
+      index = index + 1
+      components[index] = (section.kind == "deployables") and node.component or node
+    end
+  end
+  return components
+end
+
+--- The node the map's selection stands under: its own row, or the commander or dock whose row
+--- opens to show it. Each ancestor test asks the engine, so that pass runs only when no node is
+--- the object itself.
+local function selectionNode(instance, sections, total)
+  local menu       = eic.menu
+  local components = nodeComponents(sections)
+
+  for i = 1, total do
+    if components[i] and menu.isSelectedComponent(components[i]) then
+      return i
+    end
+  end
+
+  for i = 1, total do
+    if components[i] then
+      local id64 = data.getObjectInfo(instance, components[i]).id64
+      if menu.isCommander(id64, 0) or menu.isDockContext(id64) then
+        return i
+      end
+    end
+  end
+end
+
+--- Turns the tab to the page its row stands on whenever the map's selection moves, so the row
+--- the list is about to mark comes up on screen instead of off the paged-out end.
+local function followSelection(instance, sections, bounds, total)
+  local selected = eic.singleSelection()
+  local previous = followed[eic.viewMode]
+  followed[eic.viewMode] = selected
+
+  if (selected == nil) or (selected == previous) then
+    return
+  end
+  -- The list is player property alone, so nothing else on the map can hold a row in it.
+  if not GetComponentData(ConvertStringTo64Bit(selected), "isplayerowned") then
+    return
+  end
+
+  local index = selectionNode(instance, sections, total)
+  if index == nil then
+    return
+  end
+
+  for page, last in ipairs(bounds) do
+    if index <= last then
+      if eic.setCurrentPage(page) then
+        rows.pageFollowed = true
+        eic.Debug("page %d follows the map's selection on %s", page, eic.viewMode)
+      end
+      return
+    end
+  end
+end
+
 --- The window the current page opens on the whole list, and the page count behind it.
-local function pageWindow(ftable, sections, total)
+local function pageWindow(instance, ftable, sections, total)
   if not eic.pagingOn() then
     return 1, total
   end
@@ -989,6 +1062,7 @@ local function pageWindow(ftable, sections, total)
   local bounds = pageBounds(sections, total, budget, pitch, header, group)
 
   eic.pageInfo = { size = bounds[1], count = #bounds, total = total }
+  followSelection(instance, sections, bounds, total)
 
   local page = eic.currentPage()
   eic.pages[eic.viewMode] = page
@@ -1041,7 +1115,7 @@ function rows.fillInfoTable(ftable, layout, instance)
   end
 
   local total = collectNodes(instance, layout, sections)
-  local first, last = pageWindow(ftable, sections, total)
+  local first, last = pageWindow(instance, ftable, sections, total)
 
   local passed = 0
   for _, section in ipairs(sections) do

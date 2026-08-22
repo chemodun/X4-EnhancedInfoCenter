@@ -636,6 +636,19 @@ function eic.nextView(direction)
   end
 end
 
+--- The one component selected on the map, or nil when it holds none or several.
+function eic.singleSelection()
+  local found
+  ---@diagnostic disable-next-line: param-type-mismatch
+  for key in pairs(eic.menu.selectedcomponents or {}) do
+    if found then
+      return nil
+    end
+    found = key
+  end
+  return found
+end
+
 --- The list cut into windowfuls, off by default: one screenful of top-level rows per page.
 function eic.pagingOn()
   return eic.getOption("paging") and true or false
