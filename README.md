@@ -78,6 +78,7 @@ The columns follow the tab: **Overview** shows the current order, the current ac
 
 - `Paging` cuts every tab's list into pages and puts the vanilla page control - first, previous, the page number, next, last - on the tab title's line, at the right end of the panel. **It is on by default, and it is the faster of the two modes**: a page is built and drawn on its own, so the panel only ever lays out a windowful of rows instead of every ship, station and deployable you own. With a large property the difference is the panel opening and refreshing at once rather than after a pause. Turn it off and the list goes back to one scrolling whole - every row built on every refresh.
 - A page holds as many top level rows as the panel shows with every one of them collapsed, whether they are collapsed or not: rows you open push the rest of the page past the lower edge, where the list scrolls down to them the way it always did.
+- The Deployables tab counts differently, because its top level rows are groups of a name rather than objects: it counts the rows it is showing at that moment, copies of an opened group included, and cuts the pages out of that. A group with more copies than the page has room for simply carries on over the next one.
 - Each tab remembers the page it stands on, and the box between the arrows takes a page number typed straight into it. On the tabs that list the build queue, the queue follows the last page.
 
 ### Selecting on the map

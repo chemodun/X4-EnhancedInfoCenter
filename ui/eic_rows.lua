@@ -633,36 +633,31 @@ local function createGroupRow(rowGroup, layout, group, index)
     row[hullEntry.first]:createText(tostring(#group.items),
       { halign = "right", font = Helper.standardFontBold, color = menu.holomapcolor.playercolor })
   end
-
-  return expanded
 end
 
 --- Deployables listed by what they are: one row per repeated name, its copies under it when open.
+--- Its nodes are already the rows, so the window states them directly and a long group can open
+--- across a page boundary.
 local function createDeployableSection(ftable, layout, instance, section, first, last)
-  local groups = section.nodes
+  local nodes = section.nodes
   layout.sectionId = section.id
 
-  if (#groups > 0) and (first > last) then
+  if (#nodes > 0) and (first > last) then
     return
   end
 
   local rowGroup = eic.isV9 and ftable:addRowGroup({}) or ftable
-  local index    = 0
 
   for i = first, last do
-    local group = groups[i]
-    index = index + 1
-    if #group.items == 1 then
-      createObjectRow(rowGroup, layout, instance, group.items[1], 0, nil, index)
-    elseif createGroupRow(rowGroup, layout, group, index) then
-      for _, component in ipairs(group.items) do
-        index = index + 1
-        createObjectRow(rowGroup, layout, instance, component, 1, nil, index)
-      end
+    local node = nodes[i]
+    if node.group then
+      createGroupRow(rowGroup, layout, node.group, i)
+    else
+      createObjectRow(rowGroup, layout, instance, node.component, node.member and 1 or 0, nil, i)
     end
   end
 
-  if #groups == 0 then
+  if #nodes == 0 then
     local row = rowGroup:addRow(section.id, { bgColor = Color["frame_background_semitransparent"] })
     row[1]:setColSpan(layout.total):createText(section.none, { halign = "center" })
   end
@@ -868,6 +863,26 @@ end
 
 --region Paging
 
+--- The deployables tab's nodes are the rows themselves, flattened: a name group is not an object
+--- and an open one stands for as many rows as it holds, so a page there is a window over what is
+--- drawn. A group of one is drawn as the object alone, with no header over it.
+local function deployableNodes(section)
+  local nodes = {}
+  for _, group in ipairs(section.groups) do
+    if #group.items == 1 then
+      nodes[#nodes + 1] = { component = group.items[1] }
+    else
+      nodes[#nodes + 1] = { group = group }
+      if data.isExpanded({ kind = "namegroup", key = group.name }) then
+        for _, component in ipairs(group.items) do
+          nodes[#nodes + 1] = { component = component, member = true }
+        end
+      end
+    end
+  end
+  return nodes
+end
+
 --- The top-level nodes each section shows once the filters have had their say, kept on the
 --- section: the list a page slices, and the count that tells an empty section from a paged-out one.
 local function collectNodes(instance, layout, sections)
@@ -876,7 +891,7 @@ local function collectNodes(instance, layout, sections)
     if section.kind == "construction" then
       section.nodes = nil
     elseif section.kind == "deployables" then
-      section.nodes = section.groups
+      section.nodes = deployableNodes(section)
     else
       local nodes = {}
       for _, component in ipairs(section.items) do
