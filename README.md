@@ -102,13 +102,18 @@ Pick **Info Center Options** from the map's right sidebar. The options apply imm
   - ![Info Center: Overview Paging Off](docs/images/info_center_overview_paging_off.png)
   - ![Info Center: Expand/collapse only first level rows](docs/images/info_center_expand_collapse_only_first_level_rows.png)
   - ![Info Center: Expand/collapse all rows](docs/images/info_center_expand_collapse_all_rows.png)
-
+  - ![Info Center: Panel Width 30%](docs/images/info_center_panel_width_30.png)
+  - ![Info Center: Opening Tab](docs/images/info_center_opening_tab.png)
 - **Alternating row colour** - one flag each for `Stations`, `Fleets`, `Ships` and `Deployables`, so a long section can be striped while a short one is not.
-- **Trade & Cargo** - `Hide rows with no cargo or trade` drops everything that is neither carrying nor trading from the three trade tabs.
+  - ![Info Center: Alternating row colour for Stations disabled](docs/images/info_center_alternating_row_colour_stations_disabled.png)
+- **Trade & Cargo** - `Hide rows with no cargo or trade` drops everything that is neither carrying nor trading from the four trade tabs. A fleet or a station stays on the list as long as one ship in it carries or trades.
+  - ![Info Center: Trade & Cargo Hide rows with no cargo or trade](docs/images/info_center_trade_hide_rows_with_no_cargo_or_trade.png)
 
 ### Extension options
 
 **Options Menu > Extension options > Info Center**:
+
+![Info Center: Extension options](docs/images/info_center_extension_options.png)
 
 - **Debug Level** - `None` by default. `Debug` records what the panel does in the game log, `Trace` adds the per row detail. Needed only when reporting a problem.
 

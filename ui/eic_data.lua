@@ -111,6 +111,7 @@ ffi.cdef [[
 local data = {
   orderInfo      = {},
   sectorColors   = {},
+  rowFilterScan  = {},
   -- Name groups start closed and stay as the player leaves them, the way vanilla's own
   -- expansion tables live for the UI session rather than for one opening of the map.
   expandedGroups = {},
@@ -759,15 +760,15 @@ function data.isDamaged(info)
   return info.damaged
 end
 
---- Per-view row predicates. A row with children to show survives, so an opt-in filter
---- never hides a loaded fleet behind an empty leader.
+--- Per-view row predicates, asked of one object's own values alone; what it holds is the
+--- subtree's business, in data.passesRowFilter.
 data.ROW_FILTERS = {
   damaged    = function(info) return data.isDamaged(info) end,
   signal     = function(info) return data.isSignalWaiting(info) end,
   failed     = function(info) return data.getFailure(info) ~= nil end,
 
-  tradeCargo = function(info, hasChildren)
-    if hasChildren or (not eic.getOption("hideEmptyTradeRows")) then
+  tradeCargo = function(info)
+    if not eic.getOption("hideEmptyTradeRows") then
       return true
     end
     local cargo = data.getCargo(info)
@@ -775,12 +776,45 @@ data.ROW_FILTERS = {
   end,
 }
 
-function data.passesRowFilter(view, info, hasChildren)
+--- The node's own values or anything visible under it: a parent stands for what it holds, so a
+--- fleet drops off the list only when every ship in it is hidden too.
+function data.passesRowFilter(instance, view, component, info)
   local filter = view.filter and data.ROW_FILTERS[view.filter]
   if filter == nil then
     return true
   end
-  return filter(info, hasChildren) and true or false
+  if filter(info) then
+    return true
+  end
+
+  local key  = tostring(component)
+  local seen = data.rowFilterScan[key]
+  if seen ~= nil then
+    return seen
+  end
+  -- Claimed before the children are walked, so a cycle between a commander and a docked ship
+  -- cannot run away.
+  data.rowFilterScan[key] = false
+
+  local infoTableData = eic.menu.infoTableData[instance]
+  local passed        = false
+  for _, child in ipairs(infoTableData.subordinates[key] or {}) do
+    if child.component and data.isRowVisible(instance, view, child.component) then
+      passed = true
+      break
+    end
+  end
+  if not passed then
+    for _, docked in ipairs(infoTableData.dockedships[key] or {}) do
+      if docked.component and data.isRowVisible(instance, view, docked.component) then
+        passed = true
+        break
+      end
+    end
+  end
+
+  data.rowFilterScan[key] = passed
+  return passed
 end
 
 --- Whether an object gets a row at all: the option filters, the tab's own filter and the map
@@ -788,13 +822,8 @@ end
 function data.isRowVisible(instance, view, component)
   local info = data.getObjectInfo(instance, component)
   if info.rowVisible == nil then
-    local infoTableData = eic.menu.infoTableData[instance]
-    local key           = tostring(component)
-    local subordinates  = infoTableData.subordinates[key] or {}
-    local dockedShips   = infoTableData.dockedships[key] or {}
-    local hasChildren   = (subordinates.hasRendered or (#dockedShips > 0)) and true or false
-    info.rowVisible = (data.passesFilter(info) and data.passesRowFilter(view, info, hasChildren)
-      and data.passesSearch(info.id64)) and true or false
+    info.rowVisible = (data.passesFilter(info) and data.passesSearch(info.id64)
+      and data.passesRowFilter(instance, view, component, info)) and true or false
   end
   return info.rowVisible, info
 end
@@ -1007,6 +1036,7 @@ function data.collect(instance, view)
 
   data.orderInfo = {}
   data.sectorColors = {}
+  data.rowFilterScan = {}
   infoTableData.objectsInfo           = {}
   infoTableData.maxIcons              = eic.MAXICONS
   infoTableData.stations              = {}
@@ -1139,15 +1169,15 @@ local function subordinateGroups(instance, key)
 end
 
 --- Collected regardless of the current state, so a half-open list still has every node to set.
---- The row filter is not among the gates repeated here: it passes anything with children.
-local function walkNode(instance, component, deep, out)
+--- A row the builder does not draw is no target, so the same gates are repeated here.
+local function walkNode(instance, view, component, deep, out)
   local key           = tostring(component)
-  local info          = data.getObjectInfo(instance, component)
+  local visible, info = data.isRowVisible(instance, view, component)
   local infoTableData = eic.menu.infoTableData[instance]
   local subordinates  = infoTableData.subordinates[key] or {}
   local dockedShips   = infoTableData.dockedships[key] or {}
 
-  if not (data.passesFilter(info) and data.passesSearch(info.id64)) then
+  if not visible then
     return
   end
   if not (subordinates.hasRendered or (#dockedShips > 0)) then
@@ -1163,7 +1193,7 @@ local function walkNode(instance, component, deep, out)
     if groups[group] then
       out[#out + 1] = { kind = "subordinates", key = key, group = group }
       for _, member in ipairs(groups[group]) do
-        walkNode(instance, member, deep, out)
+        walkNode(instance, view, member, deep, out)
       end
     end
   end
@@ -1172,14 +1202,14 @@ local function walkNode(instance, component, deep, out)
     out[#out + 1] = { kind = "dockedships", key = key,
       isStation = Helper.isComponentClass(info.realClassId, "station") }
     for _, docked in ipairs(dockedShips) do
-      walkNode(instance, docked.component, deep, out)
+      walkNode(instance, view, docked.component, deep, out)
     end
   end
 end
 
 --- Every node the global expand button acts on: the top-level rows alone, or, under the full
 --- scope, every expandable row, subordinate group and docked block beneath them.
-function data.expandTargets(instance, sections)
+function data.expandTargets(instance, view, sections)
   local deep    = (eic.getOption("expandScope") == "full")
   local targets = {}
   for _, section in ipairs(sections) do
@@ -1192,7 +1222,7 @@ function data.expandTargets(instance, sections)
       end
     elseif section.kind ~= "construction" then
       for _, component in ipairs(section.items) do
-        walkNode(instance, component, deep, targets)
+        walkNode(instance, view, component, deep, targets)
       end
     end
   end

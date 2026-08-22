@@ -115,14 +115,9 @@ end
 
 -- What one build of the list knows about its filters: which controls the tab shows, what each
 -- of their lists may offer, and which rows survive. Rebuilt by prepare, read by everything else.
-local scan = { active = false, controls = {}, options = {}, texts = {}, colors = {},
+local scan = { active = false, counted = false, controls = {}, options = {}, texts = {}, colors = {},
   subtree = {}, matched = {}, subCount = {}, dockCount = {}, groupCount = {},
   open = { property = {}, groups = {}, docked = {} } }
-
---- True while nothing is set: the whole pass then only fills the lists the controls offer.
-function filters.active()
-  return scan.active
-end
 
 function filters.any()
   for _ in pairs(current()) do
@@ -282,7 +277,7 @@ end
 --- Run once per build, between collecting the objects and counting the rows they make: it
 --- fills the lists the controls offer and settles which rows the filters leave standing.
 function filters.prepare(instance, layout, sections)
-  scan = { active = false, controls = {}, options = {}, texts = {}, colors = {},
+  scan = { active = false, counted = false, controls = {}, options = {}, texts = {}, colors = {},
     subtree = {}, matched = {}, subCount = {}, dockCount = {}, groupCount = {},
     open = { property = {}, groups = {}, docked = {} } }
 
@@ -297,9 +292,12 @@ function filters.prepare(instance, layout, sections)
       end
     end
   end
-  if #scan.controls == 0 then
+  -- The walk also counts what a parent really shows, which the row builder needs whenever
+  -- anything can cut a child - a tab's own filter as much as a control.
+  if (#scan.controls == 0) and (layout.view.filter == nil) then
     return
   end
+  scan.counted = true
 
   for _, section in ipairs(sections) do
     if section.kind ~= "construction" then
@@ -334,7 +332,7 @@ end
 --- Whether a row still has anything to unfold, which is what puts an expand button on it.
 --- `dockedOnly` is a row in a dock block, which never unfolds its subordinates.
 function filters.hasChildren(key, subordinates, dockedShips, dockedOnly)
-  if not scan.active then
+  if not scan.counted then
     return (((not dockedOnly) and subordinates.hasRendered) or (#dockedShips > 0)) and true or false
   end
   local subCount = dockedOnly and 0 or (scan.subCount[key] or 0)
@@ -342,15 +340,15 @@ function filters.hasChildren(key, subordinates, dockedShips, dockedOnly)
 end
 
 function filters.subordinatesShown(key)
-  return (not scan.active) or ((scan.subCount[key] or 0) > 0)
+  return (not scan.counted) or ((scan.subCount[key] or 0) > 0)
 end
 
 function filters.groupShown(key, group)
-  return (not scan.active) or ((scan.groupCount[key .. group] or 0) > 0)
+  return (not scan.counted) or ((scan.groupCount[key .. group] or 0) > 0)
 end
 
 function filters.dockShown(key)
-  return (not scan.active) or ((scan.dockCount[key] or 0) > 0)
+  return (not scan.counted) or ((scan.dockCount[key] or 0) > 0)
 end
 
 --- Opened for this build alone: the player's own expansion table is never written, so

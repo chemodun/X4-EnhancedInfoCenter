@@ -428,7 +428,7 @@ local function createDockedSection(rowGroup, layout, instance, component, iterat
   -- with the full tally.
   local playerShips, foreignShips = {}, 0
   for _, docked in ipairs(dockedShips) do
-    if (not flt.active()) or flt.visible(instance, layout.view, docked.component) then
+    if flt.visible(instance, layout.view, docked.component) then
       if data.getObjectInfo(instance, docked.component).isPlayerOwned then
         playerShips[#playerShips + 1] = docked
       else
@@ -803,7 +803,7 @@ local function createExpandAllButton(row, layout, instance, sections, buttonHeig
     return
   end
 
-  local targets = data.expandTargets(instance, sections)
+  local targets = data.expandTargets(instance, layout.view, sections)
   if #targets == 0 then
     return
   end
