@@ -936,6 +936,51 @@ end
 
 --region Row interaction
 
+-- Vanilla rebuilds the map's selection out of the rows the info table holds, and keeps what the
+-- mode on show is known not to list - but only for `propertyowned` and `objectlist`. Ours is
+-- neither, so every selected object without a row here - another tab's, or one this tab's filters
+-- hide - fell out of the selection, and a rebuild put the row the cursor landed on in its place.
+
+--- The component a row stands for, keyed the way `selectedcomponents` is.
+local function rowComponentKey(rowData)
+  if type(rowData) ~= "table" then
+    return nil
+  end
+  local component = (rowData[1] == "construction") and rowData[3].component or rowData[2]
+  if (component == nil) or (component == 0) then
+    return nil
+  end
+  return tostring(ConvertStringTo64Bit(tostring(component)))
+end
+
+--- The selected objects this list holds no row for, which nothing done in it may drop.
+local function undisplayedSelection()
+  local menu  = eic.menu
+  local shown = {}
+  for _, rowData in pairs(menu.rowDataMap[menu.infoTable] or {}) do
+    local key = rowComponentKey(rowData)
+    if key then
+      shown[key] = true
+    end
+  end
+
+  local kept = {}
+  for id in pairs(menu.selectedcomponents) do
+    if not shown[id] then
+      kept[#kept + 1] = ConvertStringTo64Bit(id)
+    end
+  end
+  return kept
+end
+
+local function selectionSnapshot()
+  local snapshot = {}
+  for id, value in pairs(eic.menu.selectedcomponents) do
+    snapshot[id] = value
+  end
+  return snapshot
+end
+
 function panel.onRowChanged(row, rowData, uiTable, modified, input, source)
   local menu = eic.menu
   if (menu.infoTableMode ~= eic.MODE) or (uiTable ~= menu.infoTable) or (type(rowData) ~= "table") then
@@ -961,7 +1006,20 @@ function panel.onRowChanged(row, rowData, uiTable, modified, input, source)
     end
   end
 
+  -- A rebuild is not a player action, so the row the new table comes up on must not become the
+  -- map's selection; the call still runs, for the border and section state it also keeps. A
+  -- modified click adds to the selection rather than replacing it, so it keeps what is off list
+  -- too - a plain one replaces, which is vanilla's own rule and the one shape that drops it.
+  local restore = (source == "auto") and selectionSnapshot() or nil
+  local kept    = (modified and (restore == nil)) and undisplayedSelection() or nil
+
   menu.updateSelectedComponents(modified, source == "auto", component, row)
+
+  if restore then
+    menu.selectedcomponents = restore
+  elseif kept and (#kept > 0) then
+    menu.addSelectedComponents(kept, false)
+  end
   menu.setSelectedMapComponents()
 end
 
