@@ -10,6 +10,7 @@ It is written from scratch, inspired by the original `Info Center`.
 - **Seventeen tabs, one column layout each** - a tab is a fixed set of columns, so there are no column checkboxes and no horizontal squeeze: pick the tab that answers the question you have.
 - **Six tab groups** - everything you own, stations alone, fleets alone, unassigned ships, a flat list of every ship with its own filter tabs, and deployables.
 - **Sortable columns** - the sorter row sorts by name, sector, order, hull, skill, crew skill or cargo, and the `Cargo` button walks total capacity and used capacity.
+- **A search and filter row** - a search box over the names and ID codes, and dropdowns over sector, current order, ware and both skill columns, each list offering only the values the tab actually holds; a match on a docked or subordinate ship keeps its station or fleet on the list and opens it down to the hit.
 - **A right bar options panel** - ship sizes, ship roles, deployable types, display options, alternating row colour and panel width, in the map's own right sidebar, so the map and the list stay visible while you change them.
 - **Paged by default, for speed** - the list is cut into pages that fit the panel, and only the page you are on is built, so a large property costs no more to open than a small one. Switch paging off in the options for one long scrolling list instead.
 
@@ -67,6 +68,29 @@ The panel has a title, one. scrollable if needed, row of tab icons and the list 
   - ![Info Center: Deployables](docs/images/info_center_deployables.png)
 
 The columns follow the tab: **Overview** shows the current order, the current activity and the hull bar, **Crew** replaces the hull with the manager or pilot skill and the combined crew skill, and **Trade & Cargo** replaces both with the ware being traded, on a station row its account, and the cargo hold at the row end. A station or a fleet row has no order of its own, so it fills those columns with the icons of the ships under it instead.
+
+### Searching and filtering
+
+A filter row sits between the tab title and the sorter row, with one control over each column it filters, so nothing ever stands over a column it has no say in. A tab shows exactly the controls its own columns give it: the search box is on every tab, the **Overview** tabs add the order list, **Crew** adds the two skill lists, **Trade & Cargo** adds the ware list, and **Deployables** gets the search box and the sector list and nothing else.
+
+![Info Center: The filter row](docs/images/info_center_filter_row.png)
+
+- **Name** - a search box over the `Name` column, matching any part of an object's name or its ID code, upper and lower case alike. It filters when you leave the box rather than on every keystroke, so the text you are typing stays under your cursor.
+  - ![Info Center: Filter by name](docs/images/info_center_filter_name.png)
+  - ![Info Center: Filter by ID code](docs/images/info_center_filter_id_code.png)
+- **Sector**, **Current Order**, **Ware**, **Skill** and **Crew Skill** - a dropdown over the column, each offering only the values the tab's own objects actually carry. The sector list is painted in the sectors' owner colours, the order list holds kinds of order rather than destinations - one `Trade with` entry instead of one per station - and a skill entry stands for a range: pick three stars and you keep everything from three full stars up to, but not including, four.
+  - ![Info Center: Filter by sector dropdown](docs/images/info_center_filter_sector_dropdown.png)
+  - ![Info Center: Filter by sector](docs/images/info_center_filter_sector.png)
+  - ![Info Center: Filter by current order dropdown](docs/images/info_center_filter_order_dropdown.png)
+  - ![Info Center: Filter by current order](docs/images/info_center_filter_order.png)
+  - ![Info Center: Filter by skill dropdown](docs/images/info_center_filter_skill_dropdown.png)
+  - ![Info Center: Filter by skill](docs/images/info_center_filter_skill.png)
+  - ![Info Center: Filter by ware dropdown](docs/images/info_center_filter_ware_dropdown.png)
+  - ![Info Center: Filter by ware](docs/images/info_center_filter_ware.png)
+- **The lists are faceted** - each one offers what survives every filter but its own, so picking a sector leaves only the orders being carried out in it, and no combination the dropdowns offer can end in an empty list.
+- **A match under a row keeps the row** - a station or a fleet that matched nothing itself but holds a matching docked or subordinate ship stays on the list and is opened down to the hit. The expansion is only for as long as the filter is set: clearing it puts every row back exactly as you left it.
+- **Reset filters** - the button in the leading column of the filter row, the same column the sorter row keeps its expand button in, clears the whole set in one press. It is inactive while nothing is set.
+- Each tab keeps its own set of filters, and they last for the session rather than being stored with the savegame. Any change puts that tab back on its first page, and while a filter is set the build queue leaves the tabs that list it - a name filter that leaves two ships standing has no business drawing thirty rows of build tasks under them.
 
 ### Sorting and expanding
 
