@@ -73,6 +73,7 @@ The columns follow the tab: **Overview** shows the current order, the current ac
 - Click a column header on the sorter row to sort by it, and again to reverse the order. `Cargo` carries two figures, so its button walks total capacity, then used capacity.
 - The `+` and `-` button on the left of a row opens and closes a fleet, a subordinate group or a block of docked ships.
 - The same button on the sorter row does it for the whole list at once. It shows `-` only when everything in scope is already open, and the **Expand/collapse scope** option decides whether that scope is the top level rows or every node below them.
+  - ![Info Center: Expanded All](docs/images/info_center_expanded_all.png)
 
 ### Paging
 
@@ -89,10 +90,19 @@ Row interaction is the vanilla one, deliberately: a click makes the row current 
 
 Pick **Info Center Options** from the map's right sidebar. The options apply immediately and are stored per player, not per savegame.
 
+![Info Center: Panel options](docs/images/info_center_options_panel.png)
+
 - **Ship Size** - `XL`, `L`, `M`, `S` and `Spacesuit`, filtering every list by hull size.
+  - ![Info Center: Ship Sizes XL and S filtered](docs/images/info_center_ship_size_filtered.png)
 - **Ship Roles** - `Fight`, `Trade`, `Mine`, `Build`, `Auxiliary`, `Salvage`, `Dismantling` and `Racing`, filtering by what a ship is fitted out for.
+  - ![Info Center: Ship Roles Fight filtered in addition](docs/images/info_center_ship_roles_fight_filtered_in_addition.png)
 - **Deployables** - `Laser Towers`, `Mines`, `Navigation Beacons`, `Resource Probes`, `Satellites` and `Lockboxes`, filtering the Deployables tab.
 - **Display** - `Paging` cuts every list into pages and is on by default, for the speed it buys on a large property, `Expand/collapse scope` sets what the sorter row's expand button acts on, `Panel width` is the share of the screen the panel takes, and `Opening tab` is the tab each new session starts on.
+  - ![Info Center: Overview Paging On](docs/images/info_center_overview_paging_on.png)
+  - ![Info Center: Overview Paging Off](docs/images/info_center_overview_paging_off.png)
+  - ![Info Center: Expand/collapse only first level rows](docs/images/info_center_expand_collapse_only_first_level_rows.png)
+  - ![Info Center: Expand/collapse all rows](docs/images/info_center_expand_collapse_all_rows.png)
+
 - **Alternating row colour** - one flag each for `Stations`, `Fleets`, `Ships` and `Deployables`, so a long section can be striped while a short one is not.
 - **Trade & Cargo** - `Hide rows with no cargo or trade` drops everything that is neither carrying nor trading from the three trade tabs.
 
