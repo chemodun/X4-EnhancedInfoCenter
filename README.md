@@ -141,6 +141,10 @@ Pick **Info Center Options** from the map's right sidebar. The options apply imm
 
 - **Debug Level** - `None` by default. `Debug` records what the panel does in the game log, `Trace` adds the per row detail. Needed only when reporting a problem.
 
+## Videos
+
+- [Enhanced Info Center - Overview](https://www.youtube.com/watch?v=UbfImFCbXtE)
+
 ## Credits
 
 - Author: Chem O`Dun, on [Nexus Mods](https://www.nexusmods.com/profile/ChemODun/mods?gameId=2659) and [Steam Workshop](https://steamcommunity.com/id/chemodun/myworkshopfiles/?appid=392160)
