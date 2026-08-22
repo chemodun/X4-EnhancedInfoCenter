@@ -1,0 +1,188 @@
+[size=4][u]Enhanced Info Center[/u][/size]
+
+A wide, tabbed property panel on the map's left sidebar. Your stations, fleets and ships in the vanilla Property Owned style, each tab showing its own set of columns.
+
+It is written from scratch, inspired by the original `Info Center`.
+
+[size=3][u][b]Features[/b][/u][/size]
+[list]
+[*] [b]A wide panel instead of a narrow column[/b] - the list opens over the map at a width you choose, from a quarter of the screen up to everything left of the map's information panel, so the columns have the room the vanilla list never has.
+[*] [b]Seventeen tabs, one column layout each[/b] - a tab is a fixed set of columns, so there are no column checkboxes and no horizontal squeeze: pick the tab that answers the question you have.
+[*] [b]Six tab groups[/b] - everything you own, stations alone, fleets alone, unassigned ships, a flat list of every ship with its own filter tabs, and deployables.
+[*] [b]Sortable columns[/b] - the sorter row sorts by name, sector, order, hull, skill, crew skill or cargo, and the [b]Cargo[/b] button walks total capacity and used capacity.
+[*] [b]A search and filter row[/b] - a search box over the names and ID codes, and dropdowns over sector, current order, ware and both skill columns, each list offering only the values the tab actually holds; a match on a docked or subordinate ship keeps its station or fleet on the list and opens it down to the hit.
+[*] [b]A right bar options panel[/b] - ship sizes, ship roles, deployable types, display options, alternating row colour and panel width, in the map's own right sidebar, so the map and the list stay visible while you change them.
+[*] [b]Paged by default, for speed[/b] - the list is cut into pages that fit the panel, and only the page you are on is built, so a large property costs no more to open than a small one. Switch paging off in the options for one long scrolling list instead.
+[/list]
+[size=3][u][b]Requirements[/b][/u][/size]
+[list]
+[*] [b]X4: Foundations[/b] 8.00 and 9.00.
+[*] [url=https://www.nexusmods.com/x4foundations/mods/518]UI Extensions and HUD[/url] by [url=https://www.nexusmods.com/profile/kuertee?gameId=2659]kuertee[/url], which provides the map menu hooks the panel is built on.
+[*] [url=https://www.nexusmods.com/x4foundations/mods/503]Mod Support APIs[/url] by [url=https://www.nexusmods.com/profile/sirnukes?gameId=2659]SirNukes[/url] to be installed and enabled. Version [b]1.95[/b] and upper is required.
+[*] [url=https://www.nexusmods.com/x4foundations/mods/2089]Options Helper[/url], to provide the in-game Debug Level option. Version [b]1.10[/b] and upper is required.
+[*] [url=https://www.nexusmods.com/x4foundations/mods/2191]Print Extension List[/url], to record the game version and the enabled extensions in the log. Version [b]1.00[/b] and upper is required.
+[/list]
+[size=3][u][b]Installation[/b][/u][/size]
+[list]
+[*] [b]Nexus Mods[/b]: [url=https://www.nexusmods.com/x4foundations/mods/1970]Enhanced Info Center[/url]
+[/list]
+[size=3][u][b]Usage[/b][/u][/size]
+
+Open the map and pick [b]Info Center[/b] from the left sidebar - the entry sits right below [b]Object List[/b] on 9.00, and below [b]Property Owned[/b] on 8.00.
+
+[img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center.png[/img]
+
+The panel has a title, one. scrollable if needed, row of tab icons and the list itself. Click a tab to switch the list; the map's own next tab and previous tab input, keyboard or gamepad, steps through them as well.
+
+[size=3][u][i]The tabs[/i][/u][/size]
+[list]
+[*] [b]Overview[/b], [b]Crew[/b] and [b]Trade & Cargo[/b] - everything you own, in three column layouts: stations, fleets and unassigned ships, each section expandable down to the docked ships.
+[list]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_overview.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_crew.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_trade.png[/img]
+[/list]
+[*] [b]Stations: Overview[/b], [b]Stations: Crew[/b], [b]Stations: Trade & Cargo[/b] - the same three layouts over your stations alone.
+[list]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_stations_overview.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_stations_crew.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_stations_trade.png[/img]
+[/list]
+[*] [b]Fleets: Overview[/b], [b]Fleets: Crew[/b], [b]Fleets: Trade & Cargo[/b] - the same three over your fleets alone.
+[list]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_fleets_overview.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_fleets_crew.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_fleets_trade.png[/img]
+[/list]
+[*] [b]Unassigned Ships[/b] - every ship that answers to no commander, equal to vanilla.
+[list]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_unassigned.png[/img]
+[/list]
+[*] [b]Ships: Overview[/b], [b]Ships: Crew[/b], [b]Ships: Trade & Cargo[/b] - one flat list of every ship you own, no sections and nothing to expand; the fastest way to sort the whole fleet by a single column.
+[list]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_ships_overview.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_ships_crew.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_ships_trade.png[/img]
+[/list]
+[*] [b]Damaged[/b], [b]Wait for Signal[/b], [b]Failed Orders[/b] - that same flat list under a filter: hull below full, an order waiting on the proceed signal, and an order that has failed, the last one showing what failed and the message it failed with.
+[list]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_ships_damaged.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_ships_wait.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_ships_failed_orders.png[/img]
+[/list]
+[*] [b]Deployables[/b] - satellites, mines, navigation beacons, resource probes, laser towers and lockboxes. Objects that share a name are collapsed into one row carrying that name and, in the hull column, how many there are; expand it to see them individually.
+[list]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_deployables.png[/img]
+[/list]
+[/list]
+The columns follow the tab: [b]Overview[/b] shows the current order, the current activity and the hull bar, [b]Crew[/b] replaces the hull with the manager or pilot skill and the combined crew skill, and [b]Trade & Cargo[/b] replaces both with the ware being traded, on a station row its account, and the cargo hold at the row end. A station or a fleet row has no order of its own, so it fills those columns with the icons of the ships under it instead.
+
+[size=3][u][i]Searching and filtering[/i][/u][/size]
+
+A filter row sits between the tab title and the sorter row, with one control over each column it filters, so nothing ever stands over a column it has no say in. A tab shows exactly the controls its own columns give it: the search box is on every tab, the [b]Overview[/b] tabs add the order list, [b]Crew[/b] adds the two skill lists, [b]Trade & Cargo[/b] adds the ware list, and [b]Deployables[/b] gets the search box and the sector list and nothing else.
+
+[img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_filter_row.png[/img]
+[list]
+[*] [b]Name[/b] - a search box over the [b]Name[/b] column, matching any part of an object's name or its ID code, upper and lower case alike. It filters when you leave the box rather than on every keystroke, so the text you are typing stays under your cursor.
+[list]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_filter_name.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_filter_id_code.png[/img]
+[/list]
+[*] [b]Sector[/b], [b]Current Order[/b], [b]Ware[/b], [b]Skill[/b] and [b]Crew Skill[/b] - a dropdown over the column, each offering only the values the tab's own objects actually carry. The sector list is painted in the sectors' owner colours, the order list holds kinds of order rather than destinations - one [b]Trade with[/b] entry instead of one per station - and a skill entry stands for a range: pick three stars and you keep everything from three full stars up to, but not including, four.
+[list]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_filter_sector_dropdown.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_filter_sector.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_filter_order_dropdown.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_filter_order.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_filter_skill_dropdown.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_filter_skill.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_filter_ware_dropdown.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_filter_ware.png[/img]
+[/list]
+[*] [b]The lists are faceted[/b] - each one offers what survives every filter but its own, so picking a sector leaves only the orders being carried out in it, and no combination the dropdowns offer can end in an empty list.
+[*] [b]A match under a row keeps the row[/b] - a station or a fleet that matched nothing itself but holds a matching docked or subordinate ship stays on the list and is opened down to the hit. The expansion is only for as long as the filter is set: clearing it puts every row back exactly as you left it.
+[*] [b]Reset filters[/b] - the button in the leading column of the filter row, the same column the sorter row keeps its expand button in, clears the whole set in one press. It is inactive while nothing is set.
+[*] Each tab keeps its own set of filters, and they last for the session rather than being stored with the savegame. Any change puts that tab back on its first page, and while a filter is set the build queue leaves the tabs that list it - a name filter that leaves two ships standing has no business drawing thirty rows of build tasks under them.
+[/list]
+[size=3][u][i]Sorting and expanding[/i][/u][/size]
+[list]
+[*] Click a column header on the sorter row to sort by it, and again to reverse the order. [b]Cargo[/b] carries two figures, so its button walks total capacity, then used capacity.
+[*] The [b]+[/b] and [b]-[/b] button on the left of a row opens and closes a fleet, a subordinate group or a block of docked ships.
+[*] The same button on the sorter row does it for the whole list at once. It shows [b]-[/b] only when everything in scope is already open, and the [b]Expand/collapse scope[/b] option decides whether that scope is the top level rows or every node below them.
+[list]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_expanded_all.png[/img]
+[/list]
+[/list]
+[size=3][u][i]Paging[/i][/u][/size]
+[list]
+[*] [b]Paging[/b] cuts every tab's list into pages and puts the vanilla page control - first, previous, the page number, next, last - on the tab title's line, at the right end of the panel. [b]It is on by default, and it is the faster of the two modes[/b]: a page is built and drawn on its own, so the panel only ever lays out a windowful of rows instead of every ship, station and deployable you own. With a large property the difference is the panel opening and refreshing at once rather than after a pause. Turn it off and the list goes back to one scrolling whole - every row built on every refresh.
+[*] A page holds as many top level rows as the panel shows with every one of them collapsed, whether they are collapsed or not: rows you open push the rest of the page past the lower edge, where the list scrolls down to them the way it always did.
+[*] The Deployables tab counts differently, because its top level rows are groups of a name rather than objects: it counts the rows it is showing at that moment, copies of an opened group included, and cuts the pages out of that. A group with more copies than the page has room for simply carries on over the next one.
+[*] Each tab remembers the page it stands on, and the box between the arrows takes a page number typed straight into it. On the tabs that list the build queue, the queue follows the last page.
+[/list]
+[size=3][u][i]Selecting on the map[/i][/u][/size]
+
+Row interaction is the vanilla one, deliberately: a click makes the row current and selects that object on the map, ctrl click and shift click add to and extend the selection, a double click focuses the map on the object - or, on a subordinate group row, on the whole group - and a right click opens the interact menu for it. While the map is asking you to pick a target - a ship to hire from, a builder, a position - the panel answers with the same picker frame the vanilla list does.
+
+[size=3][u][i]Panel options[/i][/u][/size]
+
+Pick [b]Info Center Options[/b] from the map's right sidebar. The options apply immediately and are stored per player, not per savegame.
+
+[img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_options_panel.png[/img]
+[list]
+[*] [b]Ship Size[/b] - `XL`, `L`, `M`, [b]S[/b] and `Spacesuit`, filtering every list by hull size.
+[list]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_ship_size_filtered.png[/img]
+[/list]
+[*] [b]Ship Roles[/b] - `Fight`, `Trade`, `Mine`, `Build`, `Auxiliary`, `Salvage`, [b]Dismantling[/b] and `Racing`, filtering by what a ship is fitted out for.
+[list]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_ship_roles_fight_filtered_in_addition.png[/img]
+[/list]
+[*] [b]Deployables[/b] - `Laser Towers`, `Mines`, `Navigation Beacons`, `Resource Probes`, [b]Satellites[/b] and `Lockboxes`, filtering the Deployables tab.
+[*] [b]Display[/b] - [b]Paging[/b] cuts every list into pages and is on by default, for the speed it buys on a large property, [b]Expand/collapse scope[/b] sets what the sorter row's expand button acts on, [b]Panel width[/b] is the share of the screen the panel takes, and [b]Opening tab[/b] is the tab each new session starts on.
+[list]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_overview_paging_on.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_overview_paging_off.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_expand_collapse_only_first_level_rows.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_expand_collapse_all_rows.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_panel_width_30.png[/img]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_opening_tab.png[/img]
+[/list]
+[*] [b]Alternating row colour[/b] - one flag each for `Stations`, `Fleets`, [b]Ships[/b] and `Deployables`, so a long section can be striped while a short one is not.
+[list]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_alternating_row_colour_stations_disabled.png[/img]
+[/list]
+[*] [b]Trade & Cargo[/b] - [b]Hide rows with no cargo or trade[/b] drops everything that is neither carrying nor trading from the four trade tabs. A fleet or a station stays on the list as long as one ship in it carries or trades.
+[list]
+[*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_trade_hide_rows_with_no_cargo_or_trade.png[/img]
+[/list]
+[/list]
+[size=3][u][i]Extension options[/i][/u][/size]
+
+[b]Options Menu > Extension options > Info Center[/b]:
+
+[img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_extension_options.png[/img]
+[list]
+[*] [b]Debug Level[/b] - [b]None[/b] by default. [b]Debug[/b] records what the panel does in the game log, [b]Trace[/b] adds the per row detail. Needed only when reporting a problem.
+[/list]
+[size=3][u][b]Credits[/b][/u][/size]
+[list]
+[*] Author: Chem O`Dun, on [url=https://www.nexusmods.com/profile/ChemODun/mods?gameId=2659]Nexus Mods[/url] and [url=https://steamcommunity.com/id/chemodun/myworkshopfiles/?appid=392160]Steam Workshop[/url]
+[*] [i]"X4: Foundations"[/i] is a trademark of [url=https://www.egosoft.com]Egosoft[/url].
+[/list]
+[size=3][u][b]Acknowledgements[/b][/u][/size]
+[list]
+[*] [url=https://www.egosoft.com]EGOSOFT[/url] - for the X series.
+[*] To the author for the original Info Center.
+[*] [url=https://www.nexusmods.com/profile/kuertee?gameId=2659]kuertee[/url] - for the UI Extensions hooks the panel plugs into.
+[*] [url=https://www.nexusmods.com/profile/sirnukes?gameId=2659]SirNukes[/url] - for the Mod Support APIs that power the UI hooks.
+[/list]
+[size=3][u][b]Changelog[/b][/u][/size]
+
+[size=3][u][i][1.00] - 2026-08-22[/i][/u][/size]
+[list]
+[*] [b]Added[/b]
+[list]
+[*] Initial release.
+[/list]
+[/list]
