@@ -1,0 +1,6 @@
+*.xsd
+*.original
+*.modified
+dist
+*.log
+subst*

@@ -4,11 +4,11 @@
   name="Enhanced Info Center"
   author="Chem O`Dun"
   version="100"
-  date="202?-??-??"
+  date="2026-08-22"
   save="false"
   sync="false"
   enabled="true"
-  lastupdate=""
+  lastupdate="1787415838"
   description="Adds a wide, tabbed Info Center panel to the map sidebar: your stations, fleets and ships in the vanilla Property Owned style, each tab showing its own set of columns.">
   <text language="7"
     description="Adds a wide, tabbed Info Center panel to the map sidebar: your stations, fleets and ships in the vanilla Property Owned style, each tab showing its own set of columns."></text>

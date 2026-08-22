@@ -155,7 +155,7 @@ Pick **Info Center Options** from the map's right sidebar. The options apply imm
 
 ## Changelog
 
-### [1.00] - 202?-??-??
+### [1.00] - 2026-08-22
 
 - **Added**
   - Initial release.
