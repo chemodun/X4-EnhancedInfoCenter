@@ -168,6 +168,7 @@ local function walk(instance, view, component)
   -- Claimed before the children are walked, so a ship listed under two parents is counted by
   -- both without being walked twice, and a loop between them could not run away.
   scan.subtree[key] = false
+  data.tally("walk")
 
   -- Values first: a node its own filter hides still fills the lists the other controls offer.
   local keys = {}

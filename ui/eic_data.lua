@@ -167,6 +167,45 @@ function data.assignmentName(assignment)
   return ASSIGNMENTS[assignment] or ""
 end
 
+-- What one build asked the engine for, counted at the sites a cache miss costs a call. A frame
+-- clock cannot time a build; these hold whatever the clock does.
+data.counts = {}
+
+local function tally(id)
+  data.counts[id] = (data.counts[id] or 0) + 1
+end
+data.tally = tally
+
+--- The tally as one line, heaviest first, for the trace.
+function data.countsText()
+  local ids = {}
+  for id in pairs(data.counts) do
+    ids[#ids + 1] = id
+  end
+  table.sort(ids, function(a, b) return data.counts[a] > data.counts[b] end)
+
+  local parts = {}
+  for _, id in ipairs(ids) do
+    parts[#parts + 1] = string.format("%s=%d", id, data.counts[id])
+  end
+  return table.concat(parts, " ")
+end
+
+-- A macro fact rather than an object one, so it is asked once per macro and kept for the session.
+local laserTowerMacros = {}
+
+local function isLaserTowerMacro(macro)
+  if macro == nil then
+    return false
+  end
+  local cached = laserTowerMacros[macro]
+  if cached == nil then
+    cached = GetMacroData(macro, "islasertower") and true or false
+    laserTowerMacros[macro] = cached
+  end
+  return cached
+end
+
 --- Per-refresh object data, keyed by component string.
 function data.getObjectInfo(instance, component)
   local infoTableData = eic.menu.infoTableData[instance]
@@ -176,6 +215,7 @@ function data.getObjectInfo(instance, component)
     return cache[key]
   end
 
+  tally("object")
   local id64 = ConvertIDTo64Bit(component)
   local name, isPlayerOwned, hull, purpose, uiRelation, sector, sectorId, classId, realClassId, idCode, fleetName, subordinateGroup, macro, isDeployable =
       GetComponentData(component, "name", "isplayerowned", "hullpercent", "primarypurpose", "uirelation", "sector", "sectorid",
@@ -201,71 +241,83 @@ function data.getObjectInfo(instance, component)
     subordinateGroup = subordinateGroup,
     isPlayerOwned    = isPlayerOwned,
     isDeployable     = isDeployable or false,
-    isLaserTower     = (macro ~= nil) and GetMacroData(macro, "islasertower") or false,
+    isLaserTower     = isLaserTowerMacro(macro),
   }
   cache[key] = info
   return info
 end
 
---- Current order and action text, as the order menu phrases them.
-function data.getOrderText(component)
-  local key = tostring(component)
-  local cached = data.orderInfo[key]
-  if cached then
-    return cached.order, cached.action
+--- The unfilled command behind a ship's order, which is all the order filter groups by.
+--- `false` is a settled "no order"; the formatted text costs a name lookup per parameter, so
+--- it is left to getOrderText and paid only where a column draws it.
+local function orderEntry(component)
+  local key   = tostring(component)
+  local entry = data.orderInfo[key]
+  if entry then
+    return entry
   end
 
-  local menu = eic.menu
-  local orderText, actionText = "", ""
-  -- The unfilled command behind the order text, which is what the order filter groups by.
-  local orderCommand
-
+  tally("orderCmd")
+  entry = { command = false }
   -- Foreign ships docked at a player station keep their orders to themselves.
   if not GetComponentData(component, "isplayerowned") then
-    data.orderInfo[key] = { order = "", action = "" }
-    return "", ""
-  end
-
-  local entity = GetComponentData(component, "controlentity")
-  if entity == nil then
-    orderText, actionText = "-", "-"
+    entry.order, entry.action = "", ""
   else
-    local command, commandParam, commandAction, commandActionParam =
-        GetComponentData(entity, "aicommand", "aicommandparam", "aicommandaction", "aicommandactionparam")
-    orderCommand = command
-
-    local function paramText(param)
-      if IsComponentClass(param, "ship") or IsComponentClass(param, "station") or IsComponentClass(param, "sector") then
-        local name, color = menu.getContainerNameAndColors(param, 0, false, false)
-        if IsComponentClass(param, "sector") then
-          name = name:gsub(" %(%)", "")
-        end
-        return Helper.convertColorToText(color) .. name .. "\27X"
-      end
-      return GetComponentData(param, "name")
-    end
-
-    orderText = command or ""
-    if commandParam ~= nil then
-      orderText = string.format(command, paramText(commandParam))
-    end
-
-    actionText = commandAction or ""
-    if commandActionParam ~= nil then
-      actionText = string.format(commandAction, paramText(commandActionParam))
+    local entity = GetComponentData(component, "controlentity")
+    if entity == nil then
+      entry.order, entry.action = "-", "-"
+    else
+      entry.entity  = entity
+      entry.command = GetComponentData(entity, "aicommand") or false
     end
   end
 
-  data.orderInfo[key] = { order = orderText, action = actionText, command = orderCommand }
+  data.orderInfo[key] = entry
+  return entry
+end
+
+--- Current order and action text, as the order menu phrases them.
+function data.getOrderText(component)
+  local entry = orderEntry(component)
+  if entry.order then
+    return entry.order, entry.action
+  end
+
+  tally("orderText")
+  local menu = eic.menu
+  local command, commandParam, commandAction, commandActionParam =
+      GetComponentData(entry.entity, "aicommand", "aicommandparam", "aicommandaction", "aicommandactionparam")
+
+  local function paramText(param)
+    if IsComponentClass(param, "ship") or IsComponentClass(param, "station") or IsComponentClass(param, "sector") then
+      local name, color = menu.getContainerNameAndColors(param, 0, false, false)
+      if IsComponentClass(param, "sector") then
+        name = name:gsub(" %(%)", "")
+      end
+      return Helper.convertColorToText(color) .. name .. "\27X"
+    end
+    return GetComponentData(param, "name")
+  end
+
+  local orderText = command or ""
+  if commandParam ~= nil then
+    orderText = string.format(command, paramText(commandParam))
+  end
+
+  local actionText = commandAction or ""
+  if commandActionParam ~= nil then
+    actionText = string.format(commandAction, paramText(commandActionParam))
+  end
+
+  entry.order, entry.action = orderText, actionText
   return orderText, actionText
 end
 
 --- The kind of order alone - the command text with its parameter left out - so a filter list
 --- holds one entry per kind rather than one per destination. nil where there is no order.
 function data.getOrderKind(component)
-  data.getOrderText(component)
-  local command = (data.orderInfo[tostring(component)] or {}).command
-  if (command == nil) or (command == "") then
+  local command = orderEntry(component).command
+  if (not command) or (command == "") then
     return nil
   end
 
@@ -365,6 +417,7 @@ end
 --- Combined skill 0-100 of a ship's pilot or a station's manager.
 function data.skillValue(info)
   if info.skillValue == nil then
+    tally("skill")
     local value = 0
     local npc
     if Helper.isComponentClass(info.realClassId, "station") then
@@ -382,6 +435,7 @@ end
 
 function data.crewSkillValue(info)
   if info.crewSkillValue == nil then
+    tally("crewSkill")
     info.crewSkillValue = Helper.isComponentClass(info.realClassId, "ship")
         and tonumber(C.GetShipCombinedSkill(info.id64)) or 0
   end
@@ -503,6 +557,7 @@ end
 
 function data.getCargo(info)
   if info.cargo == nil then
+    tally("cargo")
     info.cargo = false
     local n = C.GetNumCargoTransportTypes(info.id64, true)
     if n > 0 then
@@ -685,6 +740,7 @@ end
 --- The newest order failure on record, falling back to the default order's.
 function data.getFailure(info)
   if info.failure == nil then
+    tally("failure")
     info.failure = false
 
     local function entry(failure)
@@ -724,6 +780,7 @@ end
 --- The ware the ship is on its way to trade; queue entries before the current one are done.
 function data.getTradeWare(info)
   if info.tradeWare == nil then
+    tally("trade")
     info.tradeWare = false
     local orders, curIndex = data.getOrders(info)
     for i = math.max(1, curIndex), #orders do
@@ -1029,11 +1086,14 @@ local function collectConstructionShips()
   return constructions
 end
 
---- Fills the per-refresh buckets and returns the sections the view asks for.
-function data.collect(instance, view)
+--- Fills the per-refresh buckets and returns the sections the view asks for. Takes the layout
+--- rather than the view alone: what the tab draws settles how much of the tree it has to gather.
+function data.collect(instance, layout)
   local menu = eic.menu
+  local view = layout.view
   local infoTableData = menu.infoTableData[instance]
 
+  data.counts = {}
   data.orderInfo = {}
   data.sectorColors = {}
   data.rowFilterScan = {}
@@ -1055,6 +1115,10 @@ function data.collect(instance, view)
 
   local playerObjects = collectPlayerObjects(instance)
   local flat = (view.source == "ships")
+  -- A deployable commands nothing and docks nothing, so its tab gathers no tree at all - and
+  -- with no tree there is no fleet cell to feed, which is what reads the fleet-unit counts.
+  local tree       = (view.scope ~= "deployables")
+  local fleetUnits = tree and (layout.byId.fleet ~= nil)
 
   for _, info in ipairs(playerObjects) do
     local object = info.id
@@ -1065,21 +1129,41 @@ function data.collect(instance, view)
         infoTableData.ships[#infoTableData.ships + 1] = object
       end
     else
-      local baseStation, isFleetLead = GetComponentData(object, "basestation", "isfleetlead")
-      if isFleetLead then
-        -- Collect the whole fleet-unit tree once instead of recursing per row.
-        menu.getFleetUnitSubordinates(instance, info.id64, false)
+      local baseStation
+      if tree then
+        local isFleetLead
+        baseStation, isFleetLead = GetComponentData(object, "basestation", "isfleetlead")
+        if fleetUnits and isFleetLead then
+          -- Collect the whole fleet-unit tree once instead of recursing per row.
+          tally("fleetUnits")
+          menu.getFleetUnitSubordinates(instance, info.id64, false)
+        end
+
+        -- Only a controllable commands anything, and a lockbox or a floating ware is a
+        -- container with no dock, so neither list is asked for where it could only come back empty.
+        if Helper.isComponentClass(info.classid, "controllable") then
+          tally("subs")
+          infoTableData.subordinates[key] = menu.getSubordinates(object, info.id64, false, info.classid)
+        end
+        if Helper.isComponentClass(info.classid, "container") and (not isDeployable(info)) then
+          tally("docked")
+          infoTableData.dockedships[key] = collectDockedShips(info.id64)
+        end
       end
 
-      infoTableData.subordinates[key] = menu.getSubordinates(object, info.id64, false, info.classid)
-      infoTableData.dockedships[key] = Helper.isComponentClass(info.classid, "container") and collectDockedShips(info.id64) or {}
-
+      local subordinates = infoTableData.subordinates[key]
       local commander
       if Helper.isComponentClass(info.classid, "controllable") then
         commander = GetCommander(object)
       end
       if not commander then
-        if Helper.isComponentClass(info.realClassId, "station") then
+        if not tree then
+          -- Nothing was gathered to tell a fleet lead from an unassigned ship, so the tab that
+          -- asked for no tree takes its own bucket and leaves the rest empty.
+          if isDeployable(info) then
+            infoTableData.deployables[#infoTableData.deployables + 1] = object
+          end
+        elseif Helper.isComponentClass(info.realClassId, "station") then
           infoTableData.stations[#infoTableData.stations + 1] = object
         elseif Helper.isComponentClass(info.classid, "buildstorage") then
           if not baseStation then
@@ -1087,7 +1171,7 @@ function data.collect(instance, view)
           end
         elseif isDeployable(info) then
           infoTableData.deployables[#infoTableData.deployables + 1] = object
-        elseif #infoTableData.subordinates[key] > 0 then
+        elseif subordinates and (#subordinates > 0) then
           infoTableData.fleetLeaderShips[#infoTableData.fleetLeaderShips + 1] = object
         else
           infoTableData.unassignedShips[#infoTableData.unassignedShips + 1] = object
@@ -1143,9 +1227,11 @@ function data.collect(instance, view)
     end
   end
 
-  eic.Trace("collected %d station(s), %d fleet(s), %d unassigned, %d ship(s), %d deployable(s)",
-    #infoTableData.stations, #infoTableData.fleetLeaderShips, #infoTableData.unassignedShips,
-    #infoTableData.ships, #infoTableData.deployables)
+  -- Every bucket holds top-level rows alone; a subordinate or a docked ship is reached through
+  -- its commander and is counted in neither, which is what the object total states.
+  eic.Trace("collected %d owned object(s) into %d station(s), %d fleet lead(s), %d unassigned, %d deployable(s), %d flat ship(s)",
+    #playerObjects, #infoTableData.stations, #infoTableData.fleetLeaderShips,
+    #infoTableData.unassignedShips, #infoTableData.deployables, #infoTableData.ships)
   return sections
 end
 

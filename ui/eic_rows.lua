@@ -282,15 +282,18 @@ local function buildContext(instance, layout, component, iteration, index, info)
     expand            = nil,
   }
 
-  -- Asked for only where a column shows it; the deployables tab has neither.
+  -- Both are asked for only where a column draws them; the deployables tab has neither.
   if (ctx.kind == "ship") and (layout.byId.order or layout.byId.action) then
     ctx.orderText, ctx.actionText = data.getOrderText(component)
-  elseif not isConstruction then
+  elseif (not isConstruction) and layout.byId.fleet then
     -- No entry cap: the cell spans the order and activity columns, so every type fits.
+    data.tally("fleetData")
     ctx.fleetTypes = menu.getPropertyOwnedFleetData(instance, component, info.macro, nil)
-    if isWing then
-      ctx.fleetName = ffi.string(C.GetFleetName(component64))
-    end
+  end
+
+  -- The name cell carries it, so a fleet row states its fleet on every tab.
+  if isWing then
+    ctx.fleetName = ffi.string(C.GetFleetName(component64))
   end
 
   return ctx
@@ -1107,7 +1110,7 @@ function rows.fillInfoTable(ftable, layout, instance)
 
   -- Ahead of the fixed rows: the sorter row's expand button is built from what it collects,
   -- and the filter row from the values the pass over those objects turns up.
-  local sections = data.collect(instance, view)
+  local sections = data.collect(instance, layout)
   flt.prepare(instance, layout, sections)
 
   -- The table's only fixed rows, and numfixedrows is the index of the last of them.
@@ -1140,6 +1143,7 @@ function rows.fillInfoTable(ftable, layout, instance)
 
   eic.Trace("view %s: row(s) %d to %d of %d over %d columns",
     view.category, first, last, total, layout.total)
+  eic.Trace("  engine: %s", data.countsText())
 end
 
 Register_Require_Response("extensions.enhanced_info_center.ui.eic_rows", rows)

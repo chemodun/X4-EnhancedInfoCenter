@@ -489,6 +489,19 @@ local builtTable = nil -- that table, so its live cursor can be read back off it
 local selection  = nil -- the map's single selection the list last scrolled to
 local pageTurned = false -- the outgoing cursor belongs to the page left behind
 
+-- The whole map selection the panel on screen was built against, so a map click that leaves it
+-- where it was is answered with nothing rather than a rebuild.
+local builtSelection = nil
+
+local function selectionKey()
+  local ids = {}
+  for id in pairs(eic.menu.selectedcomponents or {}) do
+    ids[#ids + 1] = id
+  end
+  table.sort(ids)
+  return table.concat(ids, ",")
+end
+
 --- The outgoing table's live position, kept under the view that built it.
 local function carryViewState()
   local id = builtTable and builtTable.id
@@ -814,6 +827,7 @@ function panel.createInfoFrame()
   end
   ftable:addConnection(connection + 1, 2)
 
+  builtSelection = selectionKey()
   eic.Trace("info frame built: width=%d height=%d view=%s", width, height, eic.viewMode)
 end
 
@@ -1024,6 +1038,8 @@ function panel.onRowChanged(row, rowData, uiTable, modified, input, source)
     menu.addSelectedComponents(kept, false)
   end
   menu.setSelectedMapComponents()
+  -- The table marks its own row, so the panel is in step with this selection without a rebuild.
+  builtSelection = selectionKey()
 end
 
 function panel.onSelectElement(uiTable, modified, _row, isDblClick, input)
@@ -1076,10 +1092,16 @@ function panel.onSelectElement(uiTable, modified, _row, isDblClick, input)
   end
 end
 
+--- kuertee raises onRenderTargetSelect_on_leave on every mouse-up over the map, a pan or a
+--- rotate as much as a click, and only a moved selection changes what this panel draws.
 function panel.onRenderTargetSelect(_modified)
-  if eic.menu.infoTableMode == eic.MODE then
-    eic.menu.refreshInfoFrame()
+  if eic.menu.infoTableMode ~= eic.MODE then
+    return
   end
+  if selectionKey() == builtSelection then
+    return
+  end
+  eic.menu.refreshInfoFrame()
 end
 
 function panel.onTableRightMouseClick(uiTable, row, posX, posY)
