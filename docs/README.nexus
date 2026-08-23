@@ -184,6 +184,13 @@ Pick [b]Info Center Options[/b] from the map's right sidebar. The options apply 
 [/list]
 [size=3][u][b]Changelog[/b][/u][/size]
 
+[size=3][u][i][1.01] - 2026-08-??[/i][/u][/size]
+[list]
+[*] [b]Changed[/b]
+[list]
+[*] Faster list rebuilds, most noticeably on large empires and when sorting by order, skill, crew or cargo.
+[/list]
+[/list]
 [size=3][u][i][1.00] - 2026-08-22[/i][/u][/size]
 [list]
 [*] [b]Added[/b]
