@@ -961,6 +961,15 @@ function data.sortEntries(instance, list)
   end)
 end
 
+--- The buckets hold plain components rather than entries. Sorted per bucket where the section is
+--- built, so a tab pays the comparator on the rows it draws rather than on the whole property set.
+local function sortComponents(instance, list)
+  local sorter = data.sorter()
+  table.sort(list, function(a, b)
+    return sorter(data.getObjectInfo(instance, a), data.getObjectInfo(instance, b))
+  end)
+end
+
 --endregion
 
 --region Collection
@@ -1017,7 +1026,6 @@ local function collectPlayerObjects(instance)
     end
   end
 
-  table.sort(playerObjects, data.sorter())
   return playerObjects
 end
 
@@ -1184,12 +1192,14 @@ function data.collect(instance, layout)
   local scope = view.scope
   local sections = {}
   if flat then
+    sortComponents(instance, infoTableData.ships)
     sections[#sections + 1] = {
       id = "ownedships", items = infoTableData.ships,
       none = "-- " .. ReadText(1001, 34) .. " --",
     }
   else
     if (menu.mode ~= "selectCV") and ((scope == nil) or (scope == "stations")) then
+      sortComponents(instance, infoTableData.stations)
       sections[#sections + 1] = {
         id = "ownedstations", name = (scope == nil) and ReadText(1001, 4) or nil,
         items = infoTableData.stations,
@@ -1197,6 +1207,7 @@ function data.collect(instance, layout)
       }
     end
     if (scope == nil) or (scope == "fleets") then
+      sortComponents(instance, infoTableData.fleetLeaderShips)
       sections[#sections + 1] = {
         id = "ownedfleets", name = (scope == nil) and ReadText(1001, 8326) or nil,
         items = infoTableData.fleetLeaderShips,
@@ -1204,6 +1215,7 @@ function data.collect(instance, layout)
       }
     end
     if (scope == nil) or (scope == "unassigned") then
+      sortComponents(instance, infoTableData.unassignedShips)
       sections[#sections + 1] = {
         id = "ownedships", name = (scope == nil) and ReadText(1001, 8327) or nil,
         items = infoTableData.unassignedShips,
@@ -1211,6 +1223,7 @@ function data.collect(instance, layout)
       }
     end
     if scope == "deployables" then
+      sortComponents(instance, infoTableData.deployables)
       sections[#sections + 1] = {
         id = "owneddeployables", kind = "deployables",
         items = infoTableData.deployables,

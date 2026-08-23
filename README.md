@@ -159,6 +159,11 @@ Pick **Info Center Options** from the map's right sidebar. The options apply imm
 
 ## Changelog
 
+### [1.01] - 2026-08-??
+
+- **Changed**
+  - Faster list rebuilds, most noticeably on large empires and when sorting by order, skill, crew or cargo.
+
 ### [1.00] - 2026-08-22
 
 - **Added**
