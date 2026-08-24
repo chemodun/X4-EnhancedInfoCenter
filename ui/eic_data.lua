@@ -206,7 +206,62 @@ local function isLaserTowerMacro(macro)
   return cached
 end
 
---- Per-refresh object data, keyed by component string.
+-- What an object *is* cannot change while it lives, so that half of getObjectInfo is kept across
+-- rebuilds and only the half that moves is asked again. Swept by generation: an entry survives a
+-- build only if that build asked for it.
+local staticInfo = {}
+local staticGen  = 0
+
+local function sweepStaticInfo()
+  staticGen = staticGen + 1
+  local kept, dropped = 0, 0
+  for key, entry in pairs(staticInfo) do
+    if entry.gen == staticGen - 1 then
+      kept = kept + 1
+    else
+      staticInfo[key] = nil
+      dropped = dropped + 1
+    end
+  end
+  return kept, dropped
+end
+
+--- Drops an object from the caches that outlive a build.
+local function forgetObject(key)
+  staticInfo[key] = nil
+end
+
+local function getStaticInfo(component, key)
+  local entry = staticInfo[key]
+  if entry then
+    entry.gen = staticGen
+    return entry
+  end
+
+  tally("objStatic")
+  local id64 = ConvertIDTo64Bit(component)
+  local purpose, classId, realClassId, idCode, macro, isDeployable =
+      GetComponentData(component, "primarypurpose", "classid", "realclassid", "idcode", "macro", "isdeployable")
+
+  entry = {
+    gen          = staticGen,
+    id           = component,
+    id64         = id64,
+    objectid     = idCode,
+    classid      = classId,
+    realClassId  = realClassId,
+    className    = ffi.string(C.GetComponentClass(id64)),
+    macro        = macro,
+    purpose      = purpose,
+    isDeployable = isDeployable or false,
+    isLaserTower = isLaserTowerMacro(macro),
+  }
+  staticInfo[key] = entry
+  return entry
+end
+
+--- Per-refresh object data, keyed by component string. Only name, hull, whereabouts, fleet and
+--- ownership are asked per build; what the object is comes off the cache that outlives it.
 function data.getObjectInfo(instance, component)
   local infoTableData = eic.menu.infoTableData[instance]
   local cache = infoTableData.objectsInfo
@@ -215,33 +270,36 @@ function data.getObjectInfo(instance, component)
     return cache[key]
   end
 
-  tally("object")
-  local id64 = ConvertIDTo64Bit(component)
-  local name, isPlayerOwned, hull, purpose, uiRelation, sector, sectorId, classId, realClassId, idCode, fleetName, subordinateGroup, macro, isDeployable =
-      GetComponentData(component, "name", "isplayerowned", "hullpercent", "primarypurpose", "uirelation", "sector", "sectorid",
-        "classid", "realclassid", "idcode", "fleetname", "subordinategroup", "macro", "isdeployable")
+  local fixed = getStaticInfo(component, key)
 
+  tally("object")
+  local name, isPlayerOwned, hull, uiRelation, sector, sectorId, fleetName, subordinateGroup =
+      GetComponentData(component, "name", "isplayerowned", "hullpercent", "uirelation", "sector", "sectorid",
+        "fleetname", "subordinategroup")
+
+  -- A table of its own per build, because everything derived - skill, cargo, orders, the filter
+  -- verdict - is memoised onto it and must not outlive the build.
   -- These six keys keep vanilla's spelling because Helper's sorters read them
   -- straight off this table; every other key here is ours alone.
   local info = {
-    id               = component,
-    id64             = id64,
+    id               = fixed.id,
+    id64             = fixed.id64,
     name             = name,
-    objectid         = idCode,
+    objectid         = fixed.objectid,
     fleetname        = fleetName,
-    classid          = classId,
-    realClassId      = realClassId,
-    className        = ffi.string(C.GetComponentClass(id64)),
-    macro            = macro,
+    classid          = fixed.classid,
+    realClassId      = fixed.realClassId,
+    className        = fixed.className,
+    macro            = fixed.macro,
     hull             = hull,
-    purpose          = purpose,
+    purpose          = fixed.purpose,
     relation         = uiRelation,
     sector           = sector,
     sectorId         = sectorId,
     subordinateGroup = subordinateGroup,
     isPlayerOwned    = isPlayerOwned,
-    isDeployable     = isDeployable or false,
-    isLaserTower     = isLaserTowerMacro(macro),
+    isDeployable     = fixed.isDeployable,
+    isLaserTower     = fixed.isLaserTower,
   }
   cache[key] = info
   return info
@@ -1005,7 +1063,24 @@ local function groupByName(instance, items)
   return groups
 end
 
-local function collectPlayerObjects(instance)
+--- Whether a top-level object can reach a row on this tab at all, from the static half alone.
+--- Both tests are safe to ask this early because neither object can be drawn under a parent:
+--- passesFilter hides a row wherever it appears, and a deployable commands nothing and docks
+--- nowhere, so it is never nested. The tab's own filter row is *not* asked here - the dropdown
+--- lists are built from what survives every filter but their own.
+local function tabCanDraw(fixed, flat, wantDeployables)
+  if flat and (not Helper.isComponentClass(fixed.realClassId, "ship")) then
+    return false
+  end
+  if isDeployable(fixed) ~= wantDeployables then
+    return false
+  end
+  return data.passesFilter(fixed)
+end
+
+--- The owned objects this tab could draw, as info tables. Returns the engine's total beside
+--- them, since the skipped ones never reach a bucket and the trace would otherwise lose them.
+local function collectPlayerObjects(instance, flat, wantDeployables)
   local infoTableData = eic.menu.infoTableData[instance]
 
   local playerObjects
@@ -1014,19 +1089,28 @@ local function collectPlayerObjects(instance)
   else
     playerObjects = GetContainedObjectsByOwner("player")
   end
+  local owned = #playerObjects
 
-  for i = #playerObjects, 1, -1 do
+  -- Filled rather than pruned: table.remove shifts the tail per call, and the gates below drop
+  -- the majority of the list on most tabs.
+  local kept = {}
+  for i = 1, owned do
     local object = playerObjects[i]
-    local info = data.getObjectInfo(instance, object)
-    if eic.menu.isObjectValid(info.id64, info.classid, info.realClassId) then
-      playerObjects[i] = info
-    else
-      table.remove(playerObjects, i)
-      infoTableData.objectsInfo[tostring(object)] = nil
+    local key = tostring(object)
+    -- Ahead of the volatile fetch and of isObjectValid, so an object the tab cannot draw costs
+    -- nothing beyond the static half it already had.
+    if tabCanDraw(getStaticInfo(object, key), flat, wantDeployables) then
+      local info = data.getObjectInfo(instance, object)
+      if eic.menu.isObjectValid(info.id64, info.classid, info.realClassId) then
+        kept[#kept + 1] = info
+      else
+        infoTableData.objectsInfo[key] = nil
+        forgetObject(key)
+      end
     end
   end
 
-  return playerObjects
+  return kept, owned
 end
 
 local function collectDockedShips(object64)
@@ -1105,6 +1189,7 @@ function data.collect(instance, layout)
   data.orderInfo = {}
   data.sectorColors = {}
   data.rowFilterScan = {}
+  local staticKept, staticDropped = sweepStaticInfo()
   infoTableData.objectsInfo           = {}
   infoTableData.maxIcons              = eic.MAXICONS
   infoTableData.stations              = {}
@@ -1121,21 +1206,21 @@ function data.collect(instance, layout)
   infoTableData.fleetUnitReplacements = {}
   infoTableData.moduledata            = {}
 
-  local playerObjects = collectPlayerObjects(instance)
   local flat = (view.source == "ships")
   -- A deployable commands nothing and docks nothing, so its tab gathers no tree at all - and
   -- with no tree there is no fleet cell to feed, which is what reads the fleet-unit counts.
   local tree       = (view.scope ~= "deployables")
   local fleetUnits = tree and (layout.byId.fleet ~= nil)
 
+  local playerObjects, owned = collectPlayerObjects(instance, flat, not tree)
+
   for _, info in ipairs(playerObjects) do
     local object = info.id
     local key = tostring(object)
 
     if flat then
-      if C.IsRealComponentClass(info.id64, "ship") and (not isDeployable(info)) then
-        infoTableData.ships[#infoTableData.ships + 1] = object
-      end
+      -- The class and deployable tests are what got the object past collectPlayerObjects.
+      infoTableData.ships[#infoTableData.ships + 1] = object
     else
       local baseStation
       if tree then
@@ -1164,21 +1249,19 @@ function data.collect(instance, layout)
       if Helper.isComponentClass(info.classid, "controllable") then
         commander = GetCommander(object)
       end
+      -- collectPlayerObjects has already split deployables from the rest by tab, so the tree
+      -- branches below cannot see one and the no-tree branch sees nothing else.
       if not commander then
         if not tree then
           -- Nothing was gathered to tell a fleet lead from an unassigned ship, so the tab that
           -- asked for no tree takes its own bucket and leaves the rest empty.
-          if isDeployable(info) then
-            infoTableData.deployables[#infoTableData.deployables + 1] = object
-          end
+          infoTableData.deployables[#infoTableData.deployables + 1] = object
         elseif Helper.isComponentClass(info.realClassId, "station") then
           infoTableData.stations[#infoTableData.stations + 1] = object
         elseif Helper.isComponentClass(info.classid, "buildstorage") then
           if not baseStation then
             infoTableData.stations[#infoTableData.stations + 1] = object
           end
-        elseif isDeployable(info) then
-          infoTableData.deployables[#infoTableData.deployables + 1] = object
         elseif subordinates and (#subordinates > 0) then
           infoTableData.fleetLeaderShips[#infoTableData.fleetLeaderShips + 1] = object
         else
@@ -1241,10 +1324,12 @@ function data.collect(instance, layout)
   end
 
   -- Every bucket holds top-level rows alone; a subordinate or a docked ship is reached through
-  -- its commander and is counted in neither, which is what the object total states.
-  eic.Trace("collected %d owned object(s) into %d station(s), %d fleet lead(s), %d unassigned, %d deployable(s), %d flat ship(s)",
-    #playerObjects, #infoTableData.stations, #infoTableData.fleetLeaderShips,
+  -- its commander and is counted in neither. The first total is what the tab could draw, the
+  -- second what the player owns - the gap is what the option and scope gates dropped unasked.
+  eic.Trace("collected %d of %d owned object(s) into %d station(s), %d fleet lead(s), %d unassigned, %d deployable(s), %d flat ship(s)",
+    #playerObjects, owned, #infoTableData.stations, #infoTableData.fleetLeaderShips,
     #infoTableData.unassignedShips, #infoTableData.deployables, #infoTableData.ships)
+  eic.Trace("  static cache: %d kept, %d dropped", staticKept, staticDropped)
   return sections
 end
 
