@@ -17,7 +17,7 @@ It is written from scratch, inspired by the original `Info Center`.
 ## Requirements
 
 - `X4: Foundations` 8.00 and 9.00.
-- [UI Extensions and HUD](https://www.nexusmods.com/x4foundations/mods/518) by [kuertee](https://www.nexusmods.com/profile/kuertee?gameId=2659), which provides the map menu hooks the panel is built on.
+- [UI Extensions and HUD](https://www.nexusmods.com/x4foundations/mods/552) by [kuertee](https://www.nexusmods.com/profile/kuertee?gameId=2659), which provides the map menu hooks the panel is built on.
 - [Mod Support APIs](https://www.nexusmods.com/x4foundations/mods/503) by [SirNukes](https://www.nexusmods.com/profile/sirnukes?gameId=2659) to be installed and enabled. Version `1.95` and upper is required.
 - [Options Helper](https://www.nexusmods.com/x4foundations/mods/2089), to provide the in-game Debug Level option. Version `1.10` and upper is required.
 - [Print Extension List](https://www.nexusmods.com/x4foundations/mods/2191), to record the game version and the enabled extensions in the log. Version `1.00` and upper is required.
