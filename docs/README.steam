@@ -2,7 +2,7 @@
 
 A wide, tabbed property panel on the map's left sidebar. Your stations, fleets and ships in the vanilla Property Owned style, each tab showing its own set of columns.
 
-It is written from scratch, inspired by the original `Info Center`.
+It is written from scratch, inspired by the original [b]Info Center[/b].
 
 [h2][b]Features[/b][/h2]
 [list]
@@ -17,7 +17,7 @@ It is written from scratch, inspired by the original `Info Center`.
 [h2][b]Requirements[/b][/h2]
 [list]
 [*] [b]X4: Foundations[/b] 8.00 and 9.00.
-[*] [url=https://www.nexusmods.com/x4foundations/mods/518]UI Extensions and HUD[/url] by [url=https://www.nexusmods.com/profile/kuertee?gameId=2659]kuertee[/url], which provides the map menu hooks the panel is built on.
+[*] [url=https://www.nexusmods.com/x4foundations/mods/552]UI Extensions and HUD[/url] by [url=https://www.nexusmods.com/profile/kuertee?gameId=2659]kuertee[/url], which provides the map menu hooks the panel is built on.
 [*] [url=https://www.nexusmods.com/x4foundations/mods/503]Mod Support APIs[/url] by [url=https://www.nexusmods.com/profile/sirnukes?gameId=2659]SirNukes[/url] to be installed and enabled. Version [b]1.95[/b] and upper is required.
 [*] [url=https://www.nexusmods.com/x4foundations/mods/2089]Options Helper[/url], to provide the in-game Debug Level option. Version [b]1.10[/b] and upper is required.
 [*] [url=https://www.nexusmods.com/x4foundations/mods/2191]Print Extension List[/url], to record the game version and the enabled extensions in the log. Version [b]1.00[/b] and upper is required.
@@ -130,15 +130,15 @@ Pick [b]Info Center Options[/b] from the map's right sidebar. The options apply 
 
 [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_options_panel.png[/img]
 [list]
-[*] [b]Ship Size[/b] - `XL`, `L`, `M`, [b]S[/b] and `Spacesuit`, filtering every list by hull size.
+[*] [b]Ship Size[/b] - [b]XL[/b], [b]L[/b], [b]M[/b], [b]S[/b] and [b]Spacesuit[/b], filtering every list by hull size.
 [list]
 [*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_ship_size_filtered.png[/img]
 [/list]
-[*] [b]Ship Roles[/b] - `Fight`, `Trade`, `Mine`, `Build`, `Auxiliary`, `Salvage`, [b]Dismantling[/b] and `Racing`, filtering by what a ship is fitted out for.
+[*] [b]Ship Roles[/b] - [b]Fight[/b], [b]Trade[/b], [b]Mine[/b], [b]Build[/b], [b]Auxiliary[/b], [b]Salvage[/b], [b]Dismantling[/b] and [b]Racing[/b], filtering by what a ship is fitted out for.
 [list]
 [*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_ship_roles_fight_filtered_in_addition.png[/img]
 [/list]
-[*] [b]Deployables[/b] - `Laser Towers`, `Mines`, `Navigation Beacons`, `Resource Probes`, [b]Satellites[/b] and `Lockboxes`, filtering the Deployables tab.
+[*] [b]Deployables[/b] - [b]Laser Towers[/b], [b]Mines[/b], [b]Navigation Beacons[/b], [b]Resource Probes[/b], [b]Satellites[/b] and [b]Lockboxes[/b], filtering the Deployables tab.
 [*] [b]Display[/b] - [b]Paging[/b] cuts every list into pages and is on by default, for the speed it buys on a large property, [b]Expand/collapse scope[/b] sets what the sorter row's expand button acts on, [b]Panel width[/b] is the share of the screen the panel takes, and [b]Opening tab[/b] is the tab each new session starts on.
 [list]
 [*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_overview_paging_on.png[/img]
@@ -148,7 +148,7 @@ Pick [b]Info Center Options[/b] from the map's right sidebar. The options apply 
 [*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_panel_width_30.png[/img]
 [*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_opening_tab.png[/img]
 [/list]
-[*] [b]Alternating row colour[/b] - one flag each for `Stations`, `Fleets`, [b]Ships[/b] and `Deployables`, so a long section can be striped while a short one is not.
+[*] [b]Alternating row colour[/b] - one flag each for [b]Stations[/b], [b]Fleets[/b], [b]Ships[/b] and [b]Deployables[/b], so a long section can be striped while a short one is not.
 [list]
 [*] [img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_alternating_row_colour_stations_disabled.png[/img]
 [/list]
