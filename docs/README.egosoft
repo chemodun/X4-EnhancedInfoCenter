@@ -13,6 +13,7 @@ It is written from scratch, inspired by the original [b]Info Center[/b].
 [*] [b]A search and filter row[/b] - a search box over the names and ID codes, and dropdowns over sector, current order, ware and both skill columns, each list offering only the values the tab actually holds; a match on a docked or subordinate ship keeps its station or fleet on the list and opens it down to the hit.
 [*] [b]A right bar options panel[/b] - ship sizes, ship roles, deployable types, display options, alternating row colour and panel width, in the map's own right sidebar, so the map and the list stay visible while you change them.
 [*] [b]Paged by default, for speed[/b] - the list is cut into pages that fit the panel, and only the page you are on is built, so a large property costs no more to open than a small one. Switch paging off in the options for one long scrolling list instead.
+[*] [b]An optional open/close hotkey[/b] - with the Native Hotkey API installed, one key opens the map straight on the Info Center from flight or on foot, and opens or closes the panel on the map.
 [/list]
 [size=130][u]Requirements[/u][/size]
 [list]
@@ -21,18 +22,24 @@ It is written from scratch, inspired by the original [b]Info Center[/b].
 [*] [url=https://www.nexusmods.com/x4foundations/mods/503]Mod Support APIs[/url] by [url=https://www.nexusmods.com/profile/sirnukes?gameId=2659]SirNukes[/url] to be installed and enabled. Version [b]1.95[/b] and upper is required.
 [*] [url=https://www.nexusmods.com/x4foundations/mods/2089]Options Helper[/url], to provide the in-game Debug Level option. Version [b]1.10[/b] and upper is required.
 [*] [url=https://www.nexusmods.com/x4foundations/mods/2191]Print Extension List[/url], to record the game version and the enabled extensions in the log. Version [b]1.00[/b] and upper is required.
+[*] [url=https://www.nexusmods.com/x4foundations/mods/2473]Lua Log API[/url], which writes the panel's log messages. Version [b]1.01[/b] and upper is required.
+[*] Optional: [url=https://www.nexusmods.com/x4foundations/mods/2181]Native Hotkey API[/url], for the open/close hotkey. Version [b]8.00.04[/b] and upper.
 [/list]
 [size=130][u]Installation[/u][/size]
 [list]
 [*] [b]Nexus Mods[/b]: [url=https://www.nexusmods.com/x4foundations/mods/1970]Enhanced Info Center[/url]
 [/list]
+[size=130][u]Save state[/u][/size]
+
+[b]No[/b] (removing the extension does not break saves).
+
 [size=130][u]Usage[/u][/size]
 
 Open the map and pick [b]Info Center[/b] from the left sidebar - the entry sits right below [b]Object List[/b] on 9.00, and below [b]Property Owned[/b] on 8.00.
 
 [spoiler][img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center.png[/img][/spoiler]
 
-The panel has a title, one. scrollable if needed, row of tab icons and the list itself. Click a tab to switch the list; the map's own next tab and previous tab input, keyboard or gamepad, steps through them as well.
+The panel has a title, one, scrollable if needed, row of tab icons and the list itself. Click a tab to switch the list; the map's own next tab and previous tab input, keyboard or gamepad, steps through them as well.
 
 [size=125][u]The tabs[/u][/size]
 [list]
@@ -67,7 +74,7 @@ The panel has a title, one. scrollable if needed, row of tab icons and the list 
 [*] [b]Damaged[/b], [b]Wait for Signal[/b], [b]Failed Orders[/b] - that same flat list under a filter: hull below full, an order waiting on the proceed signal, and an order that has failed, the last one showing what failed and the message it failed with.
 [list]
 [*] [spoiler][img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_ships_damaged.png[/img][/spoiler]
-[*] [spoiler][img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_ships_wait.png[/img][/spoiler]
+[*] [spoiler][img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_wait_for_signal.png[/img][/spoiler]
 [*] [spoiler][img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_ships_failed_orders.png[/img][/spoiler]
 [/list]
 [*] [b]Deployables[/b] - satellites, mines, navigation beacons, resource probes, laser towers and lockboxes. Objects that share a name are collapsed into one row carrying that name and, in the hull column, how many there are; expand it to see them individually.
@@ -165,6 +172,22 @@ Pick [b]Info Center Options[/b] from the map's right sidebar. The options apply 
 [list]
 [*] [b]Debug Level[/b] - [b]None[/b] by default. [b]Debug[/b] records what the panel does in the game log, [b]Trace[/b] adds the per row detail. Needed only when reporting a problem.
 [/list]
+[size=125][u]Hotkey[/u][/size]
+
+Needs the optional [url=https://www.nexusmods.com/x4foundations/mods/2181]Native Hotkey API[/url]. The hotkey is off by default: switch [b]Open/close hotkey[/b] to [b]Enabled[/b] in [b]Options Menu > Hotkey Management > Info Center[/b], then bind a key to the [b]Info Center[/b] action in [b]Options Menu > Hotkey Management > Hotkey Bindings[/b].
+
+[spoiler][img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_hotkey_management.png[/img][/spoiler]
+
+[spoiler][img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_hotkey_option.png[/img][/spoiler]
+
+[spoiler][img]https://raw.githubusercontent.com/chemodun/X4-EnhancedInfoCenter/refs/heads/main/docs/images/info_center_hotkey_binding.png[/img][/spoiler]
+[list]
+[*] In flight or on foot, the key opens the map on the Info Center.
+[*] On the map, it opens the Info Center panel, or closes it when it is already shown - the same as a click on its sidebar entry.
+[*] It does nothing while any other menu is open.
+[/list]
+Switching [b]Open/close hotkey[/b] back to [b]Disabled[/b] withdraws the action and frees its hotkey slot and key for other mods.
+
 [size=130][u]Videos[/u][/size]
 [list]
 [*] [url=https://www.youtube.com/watch?v=UbfImFCbXtE]Enhanced Info Center - Overview[/url]
@@ -183,11 +206,20 @@ Pick [b]Info Center Options[/b] from the map's right sidebar. The options apply 
 [/list]
 [size=130][u]Changelog[/u][/size]
 
-[size=125][u][1.01] - 2026-08-??[/u][/size]
+[size=125][u][1.01] - 2026-11-18[/u][/size]
 [list]
+[*] [b]Added[/b]
+[list]
+[*] An optional open/close hotkey, through the Native Hotkey API.
+[/list]
 [*] [b]Changed[/b]
 [list]
 [*] Faster list rebuilds, most noticeably on large empires and when sorting by order, skill, crew or cargo.
+[*] Log messages go through the Lua Log API, now a required mod.
+[/list]
+[*] [b]Fixed[/b]
+[list]
+[*] Panel options are stored the moment they change, so a game crash no longer loses them.
 [/list]
 [/list]
 [size=125][u][1.00] - 2026-08-22[/u][/size]
