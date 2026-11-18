@@ -48,6 +48,9 @@
             <t id="406">Reset filters</t>
             <t id="407">Filter by name or ID code</t>
 
+            <!-- hotkey_api settings page -->
+            <t id="500">Open/close hotkey</t>
+
             <!-- status messages -->
             <t id="1000">Nothing to show</t>
 

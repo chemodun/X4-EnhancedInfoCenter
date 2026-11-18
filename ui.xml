@@ -5,11 +5,13 @@
         <dependency name="sn_mod_support_apis" />
         <dependency name="ego_detailmonitor" />
         <dependency name="kuertee_ui_extensions" />
+        <dependency name="lua_log_api" />
         <file name="ui/eic_config.lua" />
         <file name="ui/eic_data.lua" />
         <file name="ui/eic_filters.lua" />
         <file name="ui/eic_rows.lua" />
         <file name="ui/eic_panel.lua" />
+        <file name="ui/eic_hotkey.lua" />
         <savedvariable name="EIC_Options" storage="userdata" />
     </environment>
 </addon>

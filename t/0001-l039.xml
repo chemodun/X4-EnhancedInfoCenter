@@ -48,6 +48,9 @@
             <t id="406">Reimposta filtri</t>
             <t id="407">Filtra per nome o codice identificativo</t>
 
+            <!-- hotkey_api settings page -->
+            <t id="500">Tasto di scelta rapida apri/chiudi</t>
+
             <!-- status messages -->
             <t id="1000">Nulla da mostrare</t>
 

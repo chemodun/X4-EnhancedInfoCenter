@@ -48,6 +48,9 @@
             <t id="406">重置篩選</t>
             <t id="407">依名稱或識別碼篩選</t>
 
+            <!-- hotkey_api settings page -->
+            <t id="500">開啟/關閉熱鍵</t>
+
             <!-- status messages -->
             <t id="1000">沒有可顯示的內容</t>
 

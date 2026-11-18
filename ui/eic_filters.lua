@@ -202,9 +202,8 @@ local function walk(instance, view, component)
   local matched = (misses == 0)
   scan.matched[key] = matched
 
-  local infoTableData = eic.menu.infoTableData[instance]
-  local subordinates  = infoTableData.subordinates[key] or {}
-  local dockedShips   = infoTableData.dockedships[key] or {}
+  local subordinates = data.subordinatesOf(instance, component, info)
+  local dockedShips  = data.dockedShipsOf(instance, component, info)
 
   -- Counted per branch, since a group or a dock block with nothing left in it draws no header.
   local groupCounts, subCount, dockCount = {}, 0, 0

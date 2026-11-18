@@ -3,12 +3,12 @@
   id="enhanced_info_center"
   name="Enhanced Info Center"
   author="Chem O`Dun"
-  version="100"
-  date="2026-08-22"
+  version="101"
+  date="2026-11-18"
   save="false"
   sync="false"
   enabled="true"
-  lastupdate="1787415838"
+  lastupdate="1795028882"
   description="Adds a wide, tabbed Info Center panel to the map sidebar: your stations, fleets and ships in the vanilla Property Owned style, each tab showing its own set of columns.">
   <text language="7"
     description="Adds a wide, tabbed Info Center panel to the map sidebar: your stations, fleets and ships in the vanilla Property Owned style, each tab showing its own set of columns."></text>
@@ -62,4 +62,6 @@
   <dependency id="ws_2042901274" optional="false" name="SirNukes Mod Support APIs" version="195"></dependency>
   <dependency id="ws_3715253556" optional="false" name="Options Helper" version="110"></dependency>
   <dependency id="ws_3770927339" optional="false" name="Print Extension List" version="100"></dependency>
+  <dependency id="ws_3823580916" optional="false" name="Lua Log API" version="101"></dependency>
+  <dependency id="ws_3750545906" optional="true" name="Native Hotkey API" version="80004"></dependency>
 </content>

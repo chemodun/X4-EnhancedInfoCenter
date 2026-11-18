@@ -48,6 +48,9 @@
             <t id="406">フィルターをリセット</t>
             <t id="407">名前またはIDコードで絞り込み</t>
 
+            <!-- hotkey_api settings page -->
+            <t id="500">開閉ホットキー</t>
+
             <!-- status messages -->
             <t id="1000">表示するものがありません</t>
 

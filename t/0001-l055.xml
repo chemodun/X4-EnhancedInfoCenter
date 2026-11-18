@@ -48,6 +48,9 @@
             <t id="406">Redefinir filtros</t>
             <t id="407">Filtrar por nome ou código de identificação</t>
 
+            <!-- hotkey_api settings page -->
+            <t id="500">Tecla de atalho de abrir/fechar</t>
+
             <!-- status messages -->
             <t id="1000">Nada a mostrar</t>
 

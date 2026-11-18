@@ -48,6 +48,9 @@
             <t id="406">Filtreleri sıfırla</t>
             <t id="407">Ada veya kimlik koduna göre filtrele</t>
 
+            <!-- hotkey_api settings page -->
+            <t id="500">Açma/kapama kısayolu</t>
+
             <!-- status messages -->
             <t id="1000">Gösterilecek bir şey yok</t>
 

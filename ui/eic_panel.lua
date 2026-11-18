@@ -715,6 +715,13 @@ function panel.createInfoFrame()
     return
   end
 
+  -- The map hands menu.param back on a submenu return; a hotkey open's infomode left there skips the saved state.
+  local param = menu.param
+  if param and (param[6] == "infomode") and (type(param[7]) == "table") and (param[7][1] == eic.MODE) then
+    param[6], param[7] = nil, nil
+    eic.Debug("hotkey open parameters consumed")
+  end
+
   -- The outgoing table is still up, so its cursor is read back before anything replaces it.
   -- A table that is not ours means another mode held the frame and the panel is coming back.
   local reopened = (menu.infoTable == nil) or (builtTable == nil) or (builtTable.id ~= menu.infoTable)
@@ -796,7 +803,7 @@ function panel.createInfoFrame()
   if paging then
     panel.fillPager(titleRow)
   end
-  menu.numFixedRows = ftable.numfixedrows
+  menu.numFixedRows = rows.firstDataRow() - 1
 
   if menu.infoTable then
     local result = GetShiftStartEndRow(menu.infoTable)
@@ -836,6 +843,7 @@ end
 --- Every option is a row filter or geometry read at build time, so a change rebuilds both frames.
 local function applyOption(id, value)
   eic.setOption(id, value)
+  C.SaveUIUserData()
   eic.Debug("option %s set to %s", id, tostring(value))
   eic.menu.refreshInfoFrame()
 end

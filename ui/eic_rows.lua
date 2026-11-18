@@ -237,7 +237,7 @@ local function buildContext(instance, layout, component, iteration, index, info)
   local view           = layout.view
   local key            = tostring(component)
   local component64    = info.id64
-  local subordinates   = menu.infoTableData[instance].subordinates[key] or {}
+  local subordinates   = data.subordinatesOf(instance, component, info)
   local isStation      = Helper.isComponentClass(info.realClassId, "station")
   local isWing         = (iteration == 0) and (not isStation) and (#subordinates > 0)
   local isDoubleRow    = (iteration == 0) and (isStation or (#subordinates > 0))
@@ -288,6 +288,8 @@ local function buildContext(instance, layout, component, iteration, index, info)
   elseif (not isConstruction) and layout.byId.fleet then
     -- No entry cap: the cell spans the order and activity columns, so every type fits.
     data.tally("fleetData")
+    -- Vanilla reads the dock list straight from the shared table.
+    data.dockedShipsOf(instance, component, info)
     ctx.fleetTypes = menu.getPropertyOwnedFleetData(instance, component, info.macro, nil)
   end
 
@@ -337,7 +339,7 @@ local function createSubordinateSection(rowGroup, layout, instance, component, i
   local menu         = eic.menu
   local key          = tostring(component)
   local component64  = ConvertIDTo64Bit(component)
-  local subordinates = menu.infoTableData[instance].subordinates[key] or {}
+  local subordinates = data.subordinatesOf(instance, component)
 
   local groups = {}
   for _, subordinate in ipairs(subordinates) do
@@ -416,7 +418,7 @@ local function createDockedSection(rowGroup, layout, instance, component, iterat
   local menu        = eic.menu
   local key         = tostring(component)
   local component64 = ConvertIDTo64Bit(component)
-  local dockedShips = menu.infoTableData[instance].dockedships[key] or {}
+  local dockedShips = data.dockedShipsOf(instance, component)
   local split       = splitColumn(layout)
 
   if (not menu.isDockedShipsExtended(key)) and menu.isDockContext(component64) then
@@ -492,8 +494,8 @@ createObjectRow = function(rowGroup, layout, instance, component, iteration, com
   end
 
   local key          = tostring(component)
-  local subordinates = menu.infoTableData[instance].subordinates[key] or {}
-  local dockedShips  = menu.infoTableData[instance].dockedships[key] or {}
+  local subordinates = data.subordinatesOf(instance, component, info)
+  local dockedShips  = data.dockedShipsOf(instance, component, info)
   if (not menu.isPropertyExtended(key)) and (menu.isCommander(info.id64, 0) or menu.isDockContext(info.id64)) then
     menu.extendedproperty[key] = true
   end

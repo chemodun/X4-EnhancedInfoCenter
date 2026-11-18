@@ -48,6 +48,9 @@
             <t id="406">Réinitialiser les filtres</t>
             <t id="407">Filtrer par nom ou code d'identification</t>
 
+            <!-- hotkey_api settings page -->
+            <t id="500">Raccourci d'ouverture/fermeture</t>
+
             <!-- status messages -->
             <t id="1000">Rien à afficher</t>
 

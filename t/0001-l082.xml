@@ -48,6 +48,9 @@
             <t id="406">필터 초기화</t>
             <t id="407">이름 또는 ID 코드로 필터링</t>
 
+            <!-- hotkey_api settings page -->
+            <t id="500">열기/닫기 단축키</t>
+
             <!-- status messages -->
             <t id="1000">표시할 내용이 없습니다</t>
 

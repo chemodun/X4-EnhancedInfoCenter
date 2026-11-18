@@ -511,17 +511,8 @@ end
 
 --- Every ship in a fleet, leader included, filling the same subordinate cache vanilla fills.
 local function collectFleetShips(instance, component, out)
-  local infoTableData = eic.menu.infoTableData[instance]
-  local key = tostring(component)
-  local subordinates = infoTableData.subordinates[key]
-  if subordinates == nil then
-    local info = data.getObjectInfo(instance, component)
-    subordinates = eic.menu.getSubordinates(component, info.id64, false, info.classid)
-    infoTableData.subordinates[key] = subordinates
-  end
-
   out[#out + 1] = component
-  for _, subordinate in ipairs(subordinates) do
+  for _, subordinate in ipairs(data.subordinatesOf(instance, component)) do
     if subordinate.component then
       collectFleetShips(instance, subordinate.component, out)
     end
@@ -911,16 +902,15 @@ function data.passesRowFilter(instance, view, component, info)
   -- cannot run away.
   data.rowFilterScan[key] = false
 
-  local infoTableData = eic.menu.infoTableData[instance]
-  local passed        = false
-  for _, child in ipairs(infoTableData.subordinates[key] or {}) do
+  local passed = false
+  for _, child in ipairs(data.subordinatesOf(instance, component, info)) do
     if child.component and data.isRowVisible(instance, view, child.component) then
       passed = true
       break
     end
   end
   if not passed then
-    for _, docked in ipairs(infoTableData.dockedships[key] or {}) do
+    for _, docked in ipairs(data.dockedShipsOf(instance, component, info)) do
       if docked.component and data.isRowVisible(instance, view, docked.component) then
         passed = true
         break
@@ -1063,24 +1053,29 @@ local function groupByName(instance, items)
   return groups
 end
 
---- Whether a top-level object can reach a row on this tab at all, from the static half alone.
---- Both tests are safe to ask this early because neither object can be drawn under a parent:
---- passesFilter hides a row wherever it appears, and a deployable commands nothing and docks
---- nowhere, so it is never nested. The tab's own filter row is *not* asked here - the dropdown
---- lists are built from what survives every filter but their own.
-local function tabCanDraw(fixed, flat, wantDeployables)
+--- Whether a top-level object can head a row on this tab, from the static half alone. A nested
+--- object skipped here still draws under its parent, whose lists are gathered on demand.
+--- The tab's own filter row is *not* asked here - the dropdown lists are built from what
+--- survives every filter but their own.
+local function tabCanDraw(fixed, flat, wantDeployables, scope)
   if flat and (not Helper.isComponentClass(fixed.realClassId, "ship")) then
     return false
   end
   if isDeployable(fixed) ~= wantDeployables then
     return false
   end
+  if scope == "stations" or scope == "fleets" or scope == "unassigned" then
+    local isStation = Helper.isComponentClass(fixed.realClassId, "station") or Helper.isComponentClass(fixed.classid, "buildstorage")
+    if isStation ~= (scope == "stations") then
+      return false
+    end
+  end
   return data.passesFilter(fixed)
 end
 
 --- The owned objects this tab could draw, as info tables. Returns the engine's total beside
 --- them, since the skipped ones never reach a bucket and the trace would otherwise lose them.
-local function collectPlayerObjects(instance, flat, wantDeployables)
+local function collectPlayerObjects(instance, flat, wantDeployables, scope)
   local infoTableData = eic.menu.infoTableData[instance]
 
   local playerObjects
@@ -1099,7 +1094,7 @@ local function collectPlayerObjects(instance, flat, wantDeployables)
     local key = tostring(object)
     -- Ahead of the volatile fetch and of isObjectValid, so an object the tab cannot draw costs
     -- nothing beyond the static half it already had.
-    if tabCanDraw(getStaticInfo(object, key), flat, wantDeployables) then
+    if tabCanDraw(getStaticInfo(object, key), flat, wantDeployables, scope) then
       local info = data.getObjectInfo(instance, object)
       if eic.menu.isObjectValid(info.id64, info.classid, info.realClassId) then
         kept[#kept + 1] = info
@@ -1125,6 +1120,44 @@ local function collectDockedShips(object64)
     end
   end
   return dockedShips
+end
+
+--- A node's subordinates, asked of the engine the first time a build needs them. Kept in the
+--- map's own table, which vanilla's fleet cell reads too. Only a controllable commands anything.
+function data.subordinatesOf(instance, component, info)
+  local infoTableData = eic.menu.infoTableData[instance]
+  local key  = tostring(component)
+  local list = infoTableData.subordinates[key]
+  if list == nil then
+    info = info or data.getObjectInfo(instance, component)
+    if data.gatherTree and Helper.isComponentClass(info.classid, "controllable") then
+      tally("subs")
+      list = eic.menu.getSubordinates(component, info.id64, false, info.classid)
+    else
+      list = {}
+    end
+    infoTableData.subordinates[key] = list
+  end
+  return list
+end
+
+--- The ships docked at a node, on the same terms. A lockbox or a floating ware is a container
+--- with no dock.
+function data.dockedShipsOf(instance, component, info)
+  local infoTableData = eic.menu.infoTableData[instance]
+  local key  = tostring(component)
+  local list = infoTableData.dockedships[key]
+  if list == nil then
+    info = info or data.getObjectInfo(instance, component)
+    if data.gatherTree and Helper.isComponentClass(info.classid, "container") and (not isDeployable(info)) then
+      tally("docked")
+      list = collectDockedShips(info.id64)
+    else
+      list = {}
+    end
+    infoTableData.dockedships[key] = list
+  end
+  return list
 end
 
 --- Player ship build tasks, with queued sister ships collapsed by macro.
@@ -1211,12 +1244,13 @@ function data.collect(instance, layout)
   -- with no tree there is no fleet cell to feed, which is what reads the fleet-unit counts.
   local tree       = (view.scope ~= "deployables")
   local fleetUnits = tree and (layout.byId.fleet ~= nil)
+  -- A flat tab nests nothing either, so neither tab asks the accessors below for a list.
+  data.gatherTree  = tree and (not flat)
 
-  local playerObjects, owned = collectPlayerObjects(instance, flat, not tree)
+  local playerObjects, owned = collectPlayerObjects(instance, flat, not tree, view.scope)
 
   for _, info in ipairs(playerObjects) do
     local object = info.id
-    local key = tostring(object)
 
     if flat then
       -- The class and deployable tests are what got the object past collectPlayerObjects.
@@ -1231,20 +1265,8 @@ function data.collect(instance, layout)
           tally("fleetUnits")
           menu.getFleetUnitSubordinates(instance, info.id64, false)
         end
-
-        -- Only a controllable commands anything, and a lockbox or a floating ware is a
-        -- container with no dock, so neither list is asked for where it could only come back empty.
-        if Helper.isComponentClass(info.classid, "controllable") then
-          tally("subs")
-          infoTableData.subordinates[key] = menu.getSubordinates(object, info.id64, false, info.classid)
-        end
-        if Helper.isComponentClass(info.classid, "container") and (not isDeployable(info)) then
-          tally("docked")
-          infoTableData.dockedships[key] = collectDockedShips(info.id64)
-        end
       end
 
-      local subordinates = infoTableData.subordinates[key]
       local commander
       if Helper.isComponentClass(info.classid, "controllable") then
         commander = GetCommander(object)
@@ -1262,7 +1284,7 @@ function data.collect(instance, layout)
           if not baseStation then
             infoTableData.stations[#infoTableData.stations + 1] = object
           end
-        elseif subordinates and (#subordinates > 0) then
+        elseif #data.subordinatesOf(instance, object, info) > 0 then
           infoTableData.fleetLeaderShips[#infoTableData.fleetLeaderShips + 1] = object
         else
           infoTableData.unassignedShips[#infoTableData.unassignedShips + 1] = object
@@ -1338,9 +1360,9 @@ end
 --region Expansion
 
 --- The subordinate groups a row draws, in the order createSubordinateSection walks them.
-local function subordinateGroups(instance, key)
+local function subordinateGroups(instance, component)
   local groups = {}
-  for _, subordinate in ipairs(eic.menu.infoTableData[instance].subordinates[key] or {}) do
+  for _, subordinate in ipairs(data.subordinatesOf(instance, component)) do
     if subordinate.component then
       local group = data.getObjectInfo(instance, subordinate.component).subordinateGroup
       if group and (group > 0) then
@@ -1357,13 +1379,12 @@ end
 local function walkNode(instance, view, component, deep, out)
   local key           = tostring(component)
   local visible, info = data.isRowVisible(instance, view, component)
-  local infoTableData = eic.menu.infoTableData[instance]
-  local subordinates  = infoTableData.subordinates[key] or {}
-  local dockedShips   = infoTableData.dockedships[key] or {}
-
   if not visible then
     return
   end
+
+  local subordinates = data.subordinatesOf(instance, component, info)
+  local dockedShips  = data.dockedShipsOf(instance, component, info)
   if not (subordinates.hasRendered or (#dockedShips > 0)) then
     return
   end
@@ -1372,7 +1393,7 @@ local function walkNode(instance, view, component, deep, out)
     return
   end
 
-  local groups = subordinateGroups(instance, key)
+  local groups = subordinateGroups(instance, component)
   for group = 1, 10 do
     if groups[group] then
       out[#out + 1] = { kind = "subordinates", key = key, group = group }

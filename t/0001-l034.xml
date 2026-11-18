@@ -48,6 +48,9 @@
             <t id="406">Restablecer filtros</t>
             <t id="407">Filtrar por nombre o código de identificación</t>
 
+            <!-- hotkey_api settings page -->
+            <t id="500">Tecla rápida de abrir/cerrar</t>
+
             <!-- status messages -->
             <t id="1000">Nada que mostrar</t>
 

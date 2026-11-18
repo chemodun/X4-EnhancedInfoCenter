@@ -48,6 +48,9 @@
             <t id="406">Obnovit filtry</t>
             <t id="407">Filtrovat podle názvu nebo ID kódu</t>
 
+            <!-- hotkey_api settings page -->
+            <t id="500">Klávesová zkratka otevřít/zavřít</t>
+
             <!-- status messages -->
             <t id="1000">Není co zobrazit</t>
 

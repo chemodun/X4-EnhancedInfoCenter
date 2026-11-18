@@ -122,18 +122,20 @@ local OPTION_DEFAULTS = {
 
   widthPercent   = 60,
   startView      = "overview",
+
+  hotkeyEnabled  = false,
 }
 
-local function write(message, ...)
+local function compose(message, ...)
   if select("#", ...) > 0 then
     message = string.format(message, ...)
   end
-  DebugError("InfoCenter: " .. message)
+  return "InfoCenter: " .. message
 end
 
-function eic.Error(message, ...) write(message, ...) end
-function eic.Debug(message, ...) if eic.debugLevel ~= "none" then write(message, ...) end end
-function eic.Trace(message, ...) if eic.debugLevel == "trace" then write(message, ...) end end
+function eic.Error(message, ...) UIError(compose(message, ...)) end
+function eic.Debug(message, ...) if eic.debugLevel ~= "none" then UIDebug(compose(message, ...)) end end
+function eic.Trace(message, ...) if eic.debugLevel == "trace" then UITrace(compose(message, ...)) end end
 
 function eic.ReadDebugLevel()
   local playerId = ConvertStringTo64Bit(tostring(C.GetPlayerID()))
@@ -151,9 +153,9 @@ function eic.SetDebugLevel(_, level)
   end
 end
 
--- The savedvariable is declared in ui.xml.
+-- The savedvariable is declared in ui.xml; nil only before init on a profile that never stored it.
 function eic.getOption(id)
-  local value = EIC_Options[id]
+  local value = EIC_Options and EIC_Options[id]
   if value == nil then
     return OPTION_DEFAULTS[id]
   end

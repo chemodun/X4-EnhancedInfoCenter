@@ -48,6 +48,9 @@
             <t id="406">Zresetuj filtry</t>
             <t id="407">Filtruj według nazwy lub kodu ID</t>
 
+            <!-- hotkey_api settings page -->
+            <t id="500">Skrót otwierania/zamykania</t>
+
             <!-- status messages -->
             <t id="1000">Nie ma nic do pokazania</t>
 
